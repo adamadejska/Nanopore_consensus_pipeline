@@ -1,0 +1,53 @@
+Authors: 
+Ada Madejska, MCDB, UCSB  (contact: amadejska@ucsb.edu)
+Nick Noll, UCSB
+
+This pipeline takes error-prone Nanopore reads and tries to increase the percentage identity
+of the results of identifying species with BLAST. The reads in fastq format are put through the pipeline
+which includes the following steps.
+1. Quality control 
+    - very short and very long reads (reads that highly deviate from the usual length of the 16S sequence)
+    are dropped.
+2. Kmer frequency matrix
+    - make a kmer frequency matrix based on the reads from the quality control step. The value of k
+    can be changed (k=5 or 6 is recommended)
+3. UMAP projection and HDBSCAN clustering
+    - the kmer frequency matrix is used to create a UMAP projection. The default parameters for UMAP
+    and HDBSCAN functions have been chosen based on mock dataset but can be changed. 
+4. Refinement 
+    - based on our tests on mock datasets, sometimes reads from different species can cluster together.
+    To prevent that, we include a refinement step based on MSA of Clustal Omega on each cluster.
+    The alignment outputs a guide tree which is used for dividing the cluster into smaller subclusters.
+    The distance threshold can be changed to suit each dataset.
+5. Consensus making
+    - lastly, based on the defined clusters, the last step creates a consensus sequence based on 
+    majority calling. The direction of the reads is fixed using minimap2, the alignment is performed 
+    by MAFFT, and the consensus is created using em_cons. The reads are run through BLASTN to check
+    for identity of each cluster. 
+
+Software Dependencies:
+
+To successfully run the pipeline, certain software need to be installed.
+1. Minimap2 - for the consensus making step (https://github.com/lh3/minimap2)
+2. MAFFT - for alignment in the consensus making step (https://mafft.cbrc.jp/alignment/software/)
+3. EM_CONS - for creating the consensus (http://emboss.sourceforge.net/apps/cvs/emboss/apps/cons.html)
+4. NCBIN - for identification of the consensus sequences in the database 
+    (https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/) (a 16S database is also required)
+5. CLUSTALO - for the refinement step (http://www.clustal.org/omega/)
+
+Specifications:
+
+This pipeline runs in python3.8.10 and julia v"1.4.1". 
+
+The following Python libraries are also required:
+BioPython
+hdbscan
+matplotlib
+pandas
+sklearn
+umap
+
+Following Julia packages are required:
+Pkg
+DataFrames
+CSV

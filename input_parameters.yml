@@ -1,0 +1,27 @@
+####################################################################################################
+####################################################################################################
+##  This is the input parameter file for the Nanopore consensus pipeline. 
+##  The file is written in the YAML format.  A nice description of the
+##  format can be found at http://docs.ansible.com/ansible/YAMLSyntax.html
+##
+##  Unless otherwise mentioned, all fields must be filled.
+##
+####################################################################################################
+####################################################################################################
+
+# Full path to the files need to be provided. One fastq file at a time can be analyzed. 
+fastq: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/mock_datasets/mock_experimental_ratios/mock_exp_ratio_with_errors.fasta
+tmp: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/tmp/
+dependencies: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/dependencies/
+results: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/result_files/
+
+
+# Parameters used for clustering and refinement. 
+parameters:
+  kmer_len: 5                                # Length (bp) of kmers for kmer frequency matrix
+  umap_n_components: 10                      # Dimensions for UMAP clustering
+  umap_n_neighbors: 5                        # Controls how UMAP balances local versus global structure in the data
+  hdbscan_min_cluster_size: 9                # Min number of reads that will create a cluster
+  hdbscan_cluster_selection_method: leaf     # Determine how it selects flat clusters from the cluster tree hierarchy (eom or leaf)
+  refine_threshold: 0.35                     # Maximum distance between two reads that will indicate the reads should be in the same cluster
+  ram: 8                                     # Maximum RAM (in GB) that can be used during the analysis. 
