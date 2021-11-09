@@ -63,12 +63,23 @@ def launch_pipeline(input_parameters):
 
     sys.stdout.write('Main: Launching the pipeline.\n')
     current_dir = '/'.join(__file__.split('/')[:-1])
-    fastq_dir = '/'.join(input_parameters['fastq'].split('/')[:-1])
     fastq_file = input_parameters['fastq'].split('/')[-1]
 
+    ## Run QC script.
+    sys.stdout.write('Main: Launch Quality Control script.\n')
+    os.system('python3 ' + current_dir + '/src/quality_control.py -fastq ' + input_parameters['fastq'] +
+                     ' -out ' + input_parameters['tmp'])
+
+    qc_file_path = input_parameters['tmp'] + fastq_file.split('.')[0] + '.fasta'
+    # Check if the QC script outputted a correct file to correct directory.
+    if not os.path.exists(qc_file_path):
+        sys.stderr.write('Main: the QC script did not produce expected fasta file in the tmp directory.\n')
+        sys.exit()
+
     ## Run kmer freq matrix script.
+    fasta_file = fastq_file.split('.')[0] + '.fasta'
     sys.stdout.write('Main: Launch kmer frequency matrix construction.\n')
-    os.system('julia ' + current_dir + '/src/main.jl ' + fastq_dir + ' ' + fastq_file + ' ' +
+    os.system('julia ' + current_dir + '/src/main.jl ' + input_parameters['tmp'] + ' ' + fasta_file + ' ' +
                      input_parameters['tmp'] + ' ' + str(input_parameters['parameters']['kmer_len']))
 
     kmer_file_path = input_parameters['tmp'] + fastq_file.split('.')[0] + '_kmer_matrix.csv'
@@ -80,9 +91,9 @@ def launch_pipeline(input_parameters):
     ## Run UMAP clustering script.
     sys.stdout.write('Main: Launch UMAP clustering script.\n')
     os.system('python3 ' + current_dir + '/src/umap_clustering.py -kmer ' + kmer_file_path + 
-                ' -out ' + input_parameters['tmp'] + ' -nc ' + input_parameters['parameters']['umap_n_components'] +
-                ' -nn ' + input_parameters['parameters']['umap_n_neighbors'] + ' -min_cs ' +
-                input_parameters['parameters']['hdbscan_min_cluster_size'] + ' -csm ' + 
+                ' -out ' + input_parameters['tmp'] + ' -nc ' + str(input_parameters['parameters']['umap_n_components']) +
+                ' -nn ' + str(input_parameters['parameters']['umap_n_neighbors']) + ' -min_cs ' +
+                str(input_parameters['parameters']['hdbscan_min_cluster_size']) + ' -csm ' + 
                 input_parameters['parameters']['hdbscan_cluster_selection_method'])
 
     clustering_file_path = input_parameters['tmp'] + fastq_file.split('.')[0] + '_kmer_matrix_clustering.csv'
@@ -93,9 +104,9 @@ def launch_pipeline(input_parameters):
 
     ## Run refine clusters script.
     sys.stdout.write('Main: Launch refine clusters script.\n')
-    os.system('python3 ' + current_dir + '/src/refine_clusters.py -fastq ' + input_parameters['fastq'] + 
+    os.system('python3 ' + current_dir + '/src/refine_clusters.py -fasta ' + qc_file_path + 
                 ' -clusters ' + clustering_file_path + ' -out ' + input_parameters['tmp'] + 
-                ' -ref_thr ' + input_parameters['parameters']['refine_threshold'])
+                ' -ref_thr ' + str(input_parameters['parameters']['refine_threshold']))
 
     refined_file_path = input_parameters['tmp'] + fastq_file.split('.')[0] + '_refined_clusters.txt'
     # Check if the UMAP clustering outputted a correct file to correct directory.
@@ -105,9 +116,9 @@ def launch_pipeline(input_parameters):
 
     ## Run consensus script.
     sys.stdout.write('Main: Launch define consensus script.\n')
-    os.system('python3 ' + current_dir + '/src/make_consensus.py -fastq ' + input_parameters['fastq'] + 
-                ' -clusters ' + clustering_file_path + ' -tmp_out ' + input_parameters['tmp'] + 
-                ' -out ' + input_parameters['results'])
+    os.system('python3 ' + current_dir + '/src/make_consensus.py -fasta ' + qc_file_path + 
+                ' -clusters ' + refined_file_path + ' -tmp_out ' + input_parameters['tmp'] + 
+                ' -out ' + input_parameters['results'] + ' -dep ' + input_parameters['dependencies'])
 
     consensus_file_path = input_parameters['results'] + fastq_file.split('.')[0] + '_consensus.txt'
     # Check if the UMAP clustering outputted a correct file to correct directory.
