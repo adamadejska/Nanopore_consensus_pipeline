@@ -112,21 +112,16 @@ end
 
 const root = ARGS[1]
 function main(;k=5)
-    
+
     k = parse(Int64, ARGS[4])
     count = Dict{String, Dict{UInt64, Int}}()
-    # Check if tmp_data directory is already defined, if not, make one for the out file.
-    
-    #if ! isdir("$root/tmp_data")
-    #    mkdir("$root/tmp_data/")
-    #end
 
     Threads.@threads for file in readdir(root)
         if endswith(file, ARGS[2])
             # Read each fasta file and for each read in the file calculate the kmer counts
             open("$root/$file") do io
                 for record in readfasta(io)
-                    count["$(record.name)"] = sketch(record.seq, k)
+                    count["$file/$(record.name)"] = sketch(record.seq, k)
                 end
                 m, n, h = asmatrix(count,"$file", "$root")
             end

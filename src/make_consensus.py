@@ -81,7 +81,7 @@ def make_consensus_seq(bacteria_list, full_sequences, out_name, tmp_path):
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-fastq", "--fastq_file", help="path to FASTQ file")
+parser.add_argument("-fasta", "--fasta_file", help="path to FASTA file")
 parser.add_argument("-clusters", "--cluster_file", help="path to clusters file")
 parser.add_argument('-tmp_out', "--tmp_output_path", help="path to the tmp folder")
 parser.add_argument("-out", "--output_path", help="path to the output folder")
@@ -90,7 +90,7 @@ parser.add_argument("-dep", "--dependencies_path",
                     
 args = parser.parse_args()
 
-fastq_file = args.fastq_file
+fasta_file = args.fasta_file
 cluster_file = args.cluster_file
 tmp_path = args.tmp_output_path
 
@@ -98,7 +98,7 @@ tmp_path = args.tmp_output_path
 
 # Make a dictionary of full sequences from the barcode's fastq file. 
 full_sequences = {}
-for record in SeqIO.parse(fastq_file, "fasta"):
+for record in SeqIO.parse(fasta_file, "fasta"):
     name = str(record.id)
     full_sequences[name] = str(record.seq)
 
@@ -107,7 +107,7 @@ cluster_to_reads = {}
 with open(cluster_file, 'r') as f:
     for line in f:
         line = line.split(',')
-        id, c = line[0], line[1]
+        id, c = line[0].split('/')[-1], line[1]
         c = c.strip()
         
         if c not in cluster_to_reads.keys():
@@ -116,13 +116,13 @@ with open(cluster_file, 'r') as f:
             cluster_to_reads[c].append(id)
 
 # Make a consensus sequence for each cluster.
-out_name = fastq_file.split('/')[-1].split('.')[0]
+out_name = fasta_file.split('/')[-1].split('.')[0]
 out = args.output_path + '/' + out_name + '_consensus.txt'
 
 with open(out, 'w') as f:
     for k, v in cluster_to_reads.items():
-        if k == '-1':   # Skip the unclassified reads
-            continue
+        #if k == '-1':   # Skip the unclassified reads
+        #    continue
 
         consensus = make_consensus_seq(v, full_sequences, out_name, tmp_path)
         if len(consensus) > 0:

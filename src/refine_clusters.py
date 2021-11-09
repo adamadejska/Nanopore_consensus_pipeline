@@ -49,7 +49,7 @@ class DisjointSet(object):
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-fastq", "--fastq_file", help="path to FASTQ file")
+parser.add_argument("-fasta", "--fasta_file", help="path to FASTQ file")
 parser.add_argument("-clusters", "--cluster_file", help="path to clusters file")
 parser.add_argument("-out", "--output_directory", help="path to the output directory")
 parser.add_argument("-ref_thr", "--refine_threshold", help="distance threshold used for dividing branches into clusters")
@@ -57,7 +57,7 @@ parser.add_argument("-ref_thr", "--refine_threshold", help="distance threshold u
 args = parser.parse_args()
 
 # Read in the fastq and clusters files
-fastq_file = args.fastq_file
+fasta_file = args.fasta_file
 cluster_file = args.cluster_file
 
 name = cluster_file.split('/')[-1].replace('_kmer_matrix_clustering.csv', '')
@@ -65,7 +65,7 @@ out_file = args.output_directory + '/'+ name + '_refined_clusters.txt'
 
 # Read in the fastq file and save which read has what sequence
 name_to_seq = {}
-for record in SeqIO.parse(fastq_file, "fasta"):
+for record in SeqIO.parse(fasta_file, "fasta"):
     name = str(record.id).split(' ')[0].strip()
     seq = str(record.seq)
     name_to_seq[name] = seq

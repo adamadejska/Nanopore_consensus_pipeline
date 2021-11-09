@@ -66,6 +66,7 @@ labels = hdbscan.HDBSCAN(
 ).fit_predict(clusterable_embedding)
 
 clustered = (labels >= 0)
+plt.figure(figsize=(8, 10))
 plt.rcParams['axes.facecolor'] = 'black'
 
 # Plot the points that weren't clustered (as gray dots)
