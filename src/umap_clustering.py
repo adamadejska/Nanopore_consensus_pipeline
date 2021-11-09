@@ -22,6 +22,10 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("-kmer", "--kmer_freq_matrix", help="path to kmer frequency matrix file")
 parser.add_argument("-out", "--output_path", help="path for the output file")
+parser.add_argument("-nc", "--n_components", help="number of components used for UMAP clustering")
+parser.add_argument("-nn", "--umap_n_neighbors", help="number of neighbours for UMAP clustering (local versus global structure)")
+parser.add_argument("-min_cs", "--hdbscan_min_cluster_size", help="min number of reads that will create a cluster")
+parser.add_argument("-csm", "--hdbscan_cluster_selection_method", help="method used to select clusters in hdbscan")
 
 args = parser.parse_args()
 
@@ -36,10 +40,10 @@ species = df.index.tolist()
 sys.stdout.write('\tUMAP: Construct a UMAP object. \n')
 # Construct a UMAP object
 clusterable_reducer = umap.UMAP(
-    n_neighbors=5,
+    n_neighbors=int(args.umap_n_neighbors),
     min_dist=0.0,
-    n_components=10,
-    random_state=42,)
+    n_components=int(args.n_components),
+    random_state=42)
 
 standard_reducer = umap.UMAP(random_state=42)
 
@@ -47,7 +51,7 @@ standard_reducer = umap.UMAP(random_state=42)
 read_data = df[:].values
 scaled_read_data = StandardScaler().fit_transform(read_data)
 
-#  Use the fit_transform method which first calls fit and then returns the transformed data as a numpy array.
+# Use the fit_transform method which first calls fit and then returns the transformed data as a numpy array.
 # UMAP reduces down to a 2D matrix. 
 # Each row of the array is a 2-dimensional representation of the corresponding barcode read.
 standard_embedding = standard_reducer.fit_transform(scaled_read_data)
@@ -56,9 +60,9 @@ clusterable_embedding = clusterable_reducer.fit_transform(scaled_read_data)
 
 sys.stdout.write('\tUMAP: cluster clusters using HDBSCAN. \n')
 labels = hdbscan.HDBSCAN(
-    min_cluster_size=9,
+    min_cluster_size=int(args.hdbscan_min_cluster_size),
     cluster_selection_epsilon=0.05,
-    cluster_selection_method='leaf'
+    cluster_selection_method=args.hdbscan_cluster_selection_method
 ).fit_predict(clusterable_embedding)
 
 clustered = (labels >= 0)
@@ -77,7 +81,7 @@ plt.scatter(standard_embedding[clustered, 0],
             s=5.0,
             cmap='plasma')
 
-plt.title('\tUMAP projection of ' + name + ' reads kmer frequency matrix \n and hdbscan clustering (' 
+plt.title('UMAP projection of \n' + name + ' \nreads kmer frequency matrix and hdbscan clustering \n(' 
             + str(max(labels)+1) + ' clusters found)')
 
 # Label each cluster on the UMAP projection.

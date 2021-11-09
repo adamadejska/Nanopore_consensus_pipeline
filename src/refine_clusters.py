@@ -52,6 +52,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-fastq", "--fastq_file", help="path to FASTQ file")
 parser.add_argument("-clusters", "--cluster_file", help="path to clusters file")
 parser.add_argument("-out", "--output_directory", help="path to the output directory")
+parser.add_argument("-ref_thr", "--refine_threshold", help="distance threshold used for dividing branches into clusters")
 
 args = parser.parse_args()
 
@@ -104,7 +105,7 @@ for c in range(-1, max(clusters)):
 
     # Refine the clusters based on the guide tree of Clustal Omega. If the distance between 2 leafs is
     # greater than a threshold, consider them not related.
-    threshold = 0.35
+    threshold = float(args.refine_threshold)
     # Get the names of the leafs
     leafs = list(tree.get_terminals())
     names = [x.name for x in leafs]

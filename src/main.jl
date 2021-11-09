@@ -113,6 +113,7 @@ end
 const root = ARGS[1]
 function main(;k=5)
     
+    k = parse(Int64, ARGS[4])
     count = Dict{String, Dict{UInt64, Int}}()
     # Check if tmp_data directory is already defined, if not, make one for the out file.
     
