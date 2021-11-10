@@ -36,6 +36,10 @@ def parse_config_file(config_path):
             if not os.path.isdir(input_config[field]):
                 sys.stderr.write('The path for ' + field + ' does not exist. Please check the path to the folder.\n')
                 sys.exit()
+        elif field == 'refinement':
+            if not isinstance(input_config[field], bool):
+                sys.stderr.write('The refinement field requires a boolean value (True / False).\n')
+                sys.exit()
         else:
             for param in required_parameters:
                 if param == 'hdbscan_cluster_selection_method':
@@ -94,7 +98,8 @@ def launch_pipeline(input_parameters):
                 ' -out ' + input_parameters['tmp'] + ' -nc ' + str(input_parameters['parameters']['umap_n_components']) +
                 ' -nn ' + str(input_parameters['parameters']['umap_n_neighbors']) + ' -min_cs ' +
                 str(input_parameters['parameters']['hdbscan_min_cluster_size']) + ' -csm ' + 
-                input_parameters['parameters']['hdbscan_cluster_selection_method'])
+                input_parameters['parameters']['hdbscan_cluster_selection_method'] + ' -res_out ' +
+                input_parameters['results'])
 
     clustering_file_path = input_parameters['tmp'] + fastq_file.split('.')[0] + '_kmer_matrix_clustering.csv'
     # Check if the UMAP clustering outputted a correct file to correct directory.
@@ -102,29 +107,42 @@ def launch_pipeline(input_parameters):
         sys.stderr.write('Main: the UMAP clustering script did not produce expected csv file in the tmp directory.\n')
         sys.exit()
 
-    ## Run refine clusters script.
-    sys.stdout.write('Main: Launch refine clusters script.\n')
-    os.system('python3 ' + current_dir + '/src/refine_clusters.py -fasta ' + qc_file_path + 
-                ' -clusters ' + clustering_file_path + ' -out ' + input_parameters['tmp'] + 
-                ' -ref_thr ' + str(input_parameters['parameters']['refine_threshold']))
+    if input_parameters['refinement']:
+        ## Run refine clusters script.
+        sys.stdout.write('Main: Launch refine clusters script.\n')
+        os.system('python3 ' + current_dir + '/src/refine_clusters.py -fasta ' + qc_file_path + 
+                    ' -clusters ' + clustering_file_path + ' -out ' + input_parameters['tmp'] + 
+                    ' -ref_thr ' + str(input_parameters['parameters']['refine_threshold']))
 
-    refined_file_path = input_parameters['tmp'] + fastq_file.split('.')[0] + '_refined_clusters.txt'
-    # Check if the UMAP clustering outputted a correct file to correct directory.
-    if not os.path.exists(refined_file_path):
-        sys.stderr.write('Main: the refinement script did not produce expected txt file in the tmp directory.\n')
-        sys.exit()
+        refined_file_path = input_parameters['tmp'] + fastq_file.split('.')[0] + '_refined_clusters.txt'
+        # Check if the UMAP clustering outputted a correct file to correct directory.
+        if not os.path.exists(refined_file_path):
+            sys.stderr.write('Main: the refinement script did not produce expected txt file in the tmp directory.\n')
+            sys.exit()
 
-    ## Run consensus script.
-    sys.stdout.write('Main: Launch define consensus script.\n')
-    os.system('python3 ' + current_dir + '/src/make_consensus.py -fasta ' + qc_file_path + 
-                ' -clusters ' + refined_file_path + ' -tmp_out ' + input_parameters['tmp'] + 
-                ' -out ' + input_parameters['results'] + ' -dep ' + input_parameters['dependencies'])
+        ## Run consensus script.
+        sys.stdout.write('Main: Launch define consensus script.\n')
+        os.system('python3 ' + current_dir + '/src/make_consensus.py -fasta ' + qc_file_path + 
+                    ' -clusters ' + refined_file_path + ' -tmp_out ' + input_parameters['tmp'] + 
+                    ' -out ' + input_parameters['results'] + ' -dep ' + input_parameters['dependencies'])
 
-    consensus_file_path = input_parameters['results'] + fastq_file.split('.')[0] + '_consensus.txt'
-    # Check if the UMAP clustering outputted a correct file to correct directory.
-    if not os.path.exists(refined_file_path):
-        sys.stderr.write('Main: the consensus script did not produce expected txt file in the tmp directory.\n')
-        sys.exit()
+        consensus_file_path = input_parameters['results'] + fastq_file.split('.')[0] + '_consensus.txt'
+        # Check if the UMAP clustering outputted a correct file to correct directory.
+        if not os.path.exists(consensus_file_path):
+            sys.stderr.write('Main: the consensus script did not produce expected txt file in the tmp directory.\n')
+            sys.exit()
+    else:
+        ## Run consensus script.
+        sys.stdout.write('Main: Launch define consensus script.\n')
+        os.system('python3 ' + current_dir + '/src/make_consensus.py -fasta ' + qc_file_path + 
+                    ' -clusters ' + clustering_file_path + ' -tmp_out ' + input_parameters['tmp'] + 
+                    ' -out ' + input_parameters['results'] + ' -dep ' + input_parameters['dependencies'])
+
+        consensus_file_path = input_parameters['results'] + fastq_file.split('.')[0] + '_consensus.txt'
+        # Check if the UMAP clustering outputted a correct file to correct directory.
+        if not os.path.exists(consensus_file_path):
+            sys.stderr.write('Main: the consensus script did not produce expected txt file in the tmp directory.\n')
+            sys.exit()
 
 
 def main():
