@@ -127,7 +127,7 @@ def launch_pipeline(input_parameters):
                     ' -out ' + input_parameters['results'] + ' -dep ' + input_parameters['dependencies'])
 
         consensus_file_path = input_parameters['results'] + fastq_file.split('.')[0] + '_consensus.txt'
-        # Check if the UMAP clustering outputted a correct file to correct directory.
+        # Check if the consensus outputted a correct file to correct directory.
         if not os.path.exists(consensus_file_path):
             sys.stderr.write('Main: the consensus script did not produce expected txt file in the tmp directory.\n')
             sys.exit()
@@ -139,10 +139,22 @@ def launch_pipeline(input_parameters):
                     ' -out ' + input_parameters['results'] + ' -dep ' + input_parameters['dependencies'])
 
         consensus_file_path = input_parameters['results'] + fastq_file.split('.')[0] + '_consensus.txt'
-        # Check if the UMAP clustering outputted a correct file to correct directory.
+        # Check if the consensus outputted a correct file to correct directory.
         if not os.path.exists(consensus_file_path):
             sys.stderr.write('Main: the consensus script did not produce expected txt file in the tmp directory.\n')
             sys.exit()
+
+    ## Run BLASTN parsing script.
+    sys.stdout.write('Main: Launch BLASTN output parsing script.\n')
+    blast_file_path = input_parameters['results'] + fastq_file.split('.')[0] + '_blastn_result.fa'
+    os.system('python3 ' + current_dir + '/src/parse_blast_output.py -blast ' + blast_file_path +  
+                ' -out ' + input_parameters['results'])
+
+    parsed_result_file_path = input_parameters['results'] + fastq_file.split('.')[0] + '_final_cluster_identities.csv'
+    # Check if the UMAP clustering outputted a correct file to correct directory.
+    if not os.path.exists(parsed_result_file_path):
+        sys.stderr.write('Main: the BLAST parsing script did not produce expected txt file in the tmp directory.\n')
+        sys.exit()
 
 
 def main():

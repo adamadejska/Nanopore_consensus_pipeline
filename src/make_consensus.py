@@ -1,5 +1,4 @@
 #####################################################################
-# Last step of the read clustering pipeline.
 # Given a file of read names and cluster numbers, make consensus
 # sequences for all clusters. Output a file with cluster number and
 # the consensus sequence.

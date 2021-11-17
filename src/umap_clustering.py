@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("-kmer", "--kmer_freq_matrix", help="path to kmer frequency matrix file")
 parser.add_argument("-out", "--output_path", help="path for the output file")
+parser.add_argument("-res_out", "--results_out", help="path to the results output file")
 parser.add_argument("-nc", "--n_components", help="number of components used for UMAP clustering")
 parser.add_argument("-nn", "--umap_n_neighbors", help="number of neighbours for UMAP clustering (local versus global structure)")
 parser.add_argument("-min_cs", "--hdbscan_min_cluster_size", help="min number of reads that will create a cluster")
@@ -66,7 +67,7 @@ labels = hdbscan.HDBSCAN(
 ).fit_predict(clusterable_embedding)
 
 clustered = (labels >= 0)
-plt.figure(figsize=(8, 10))
+plt.figure(figsize=(14, 8))
 plt.rcParams['axes.facecolor'] = 'black'
 
 # Plot the points that weren't clustered (as gray dots)
@@ -114,7 +115,7 @@ for i in range (0, max(labels)+1):
 sys.stdout.write('\tUMAP: Write output files. \n')
 out_file = out_path + '/' + name + '_clustering.csv'
 
-plt.savefig( out_path + '/' + name + '_umap.png')
+plt.savefig( args.results_out + '/' + name + '_umap.png')
 
 with open(out_file, 'w') as out:
     for i in range(0, len(labels)):
