@@ -45,33 +45,37 @@ parser.add_argument("-out", "--output_path", help="path to parsed output file")
 
 args = parser.parse_args()
 
-blast_file = args.blast_file
-out_path = args.output_path
+#blast_file = args.blast_file
+#out_path = args.output_path
 
-file_name = blast_file.split('_')[0]
+blast_file = '/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/result_files/barcode12_small_blastn_result.fa'
+out_path = '/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/result_files'
+
+file_name = blast_file.split('/')[-1].split('_')[0]
 out_file = out_path + '/' + file_name + '_final_cluster_identities.csv'
 
 
 # Read the BLAST output file line by line and extract the info on the top hit for each cluster.
 # Save the results to the appropriate output file.
 with open(out_file, 'w') as out:
+    out.write('cluster#, ID, full_name, score, e_value, identity_%, gaps_%\n')
     with open(blast_file, 'r') as f:
         new_query = False
         for line in f:
-            if line.startswith('Query'):
+            if line.startswith('Query=') and not new_query:
                 cluster = line.split('=')[1].strip()
                 new_query = True
             if line.startswith('>') and new_query:
                 line = line.split(',')[0]
-                id = line.split(' ')[0]
-                full_name = ' '.join(line.split(' ')[1:])
+                id = line.split(' ')[0][1:]
+                full_name = ' '.join(line.split(' ')[1:]).strip()
 
-            if line.startswith(' Score:') and new_query:
+            if line.startswith(' Score') and new_query:
                 score = line.split(',')[0].split('(')[-1][:-1]
                 e_value = line.split(',')[1].split('=')[1].strip()
-            if line.startswith(' Identities'):
+            if line.startswith(' Identities') and new_query:
                 identity = line.split(',')[0].split('(')[-1][:-2]
-                gaps = line.split(',')[1].split('(')[-1][:-2]
+                gaps = line.split(',')[1].split('(')[-1][:-3]
 
                 out.write(cluster + ',' + id + ',' + full_name + ',' + score + ',' + e_value + 
                         ',' + identity + ',' + gaps + '\n')
