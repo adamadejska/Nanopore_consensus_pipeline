@@ -22,7 +22,7 @@ def parse_config_file(config_path):
     # Make sure that all required fields are filled in and exist.
     required_fields = ['fastq', 'tmp', 'results', 'dependencies', 'parameters']
     required_parameters = ['kmer_len', 'umap_n_components', 'umap_n_neighbors', 'hdbscan_min_cluster_size',
-                            'hdbscan_cluster_selection_method', 'refine_threshold', 'ram']
+                            'hdbscan_cluster_selection_method', 'ram']
 
     for field in required_fields:
         if field == 'fastq':
@@ -46,10 +46,6 @@ def parse_config_file(config_path):
                     if input_config[field][param] not in ['leaf', 'eom']:
                         sys.stderr.write('The hdbscan_cluster_selection_method provided is not supported by hdbscan.'+
                                             ' Please choose either leaf or eom or check the spelling \n')
-                        sys.exit()
-                elif param == 'refine_threshold':
-                    if not isinstance(input_config[field][param], float) or input_config[field][param] > 1:
-                        sys.stderr.write('The threshold provided is not a float number or is greater than 1.\n')
                         sys.exit()
                 else:
                     if not isinstance(input_config[field][param], int):
@@ -111,8 +107,7 @@ def launch_pipeline(input_parameters):
         ## Run refine clusters script.
         sys.stdout.write('Main: Launch refine clusters script.\n')
         os.system('python3 ' + current_dir + '/src/refine_clusters.py -fasta ' + qc_file_path + 
-                    ' -clusters ' + clustering_file_path + ' -out ' + input_parameters['tmp'] + 
-                    ' -ref_thr ' + str(input_parameters['parameters']['refine_threshold']))
+                    ' -clusters ' + clustering_file_path + ' -out ' + input_parameters['tmp'])
 
         refined_file_path = input_parameters['tmp'] + fastq_file.split('.')[0] + '_refined_clusters.txt'
         # Check if the UMAP clustering outputted a correct file to correct directory.
@@ -153,7 +148,8 @@ def launch_pipeline(input_parameters):
     parsed_result_file_path = input_parameters['results'] + fastq_file.split('.')[0] + '_final_cluster_identities.csv'
     # Check if the UMAP clustering outputted a correct file to correct directory.
     if not os.path.exists(parsed_result_file_path):
-        sys.stderr.write('Main: the BLAST parsing script did not produce expected txt file in the tmp directory.\n')
+        sys.stderr.write(parsed_result_file_path)
+        sys.stderr.write('Main: the BLAST parsing script did not produce expected txt file in the results directory.\n')
         sys.exit()
 
 

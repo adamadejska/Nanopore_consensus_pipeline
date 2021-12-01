@@ -8,43 +8,47 @@
 # Output: a file containing a list of reads and the new, refined clusters.
 #####################################################################
 
-from Bio import Phylo
-from Bio import SeqIO
 import argparse
+from Bio import SeqIO
+from ete3 import PhyloTree
+import numpy as np
 import os
 
 
-# Code from: https://stackoverflow.com/questions/3067529/a-set-union-find-algorithm
-class DisjointSet(object):
+def recursive_subclustering(root, t, parent):
+    """
+    This function divides MSA guide trees into subclades based on the differences in branch lengths.
+    The function is called recursively, traversing the tree from bottom to the top and if it detects
+    a change in branch length that is above a set threshold, it will call the leafs attached to that 
+    point as two separate subclusters. 
+    Returns a list of nodes that indicate the start of a new subcluster.
+    """
+    if root.get_children() == []:
+        return([], t.get_distance(root, parent))
+    
+    c1, c2 = root.get_children()
 
-    def __init__(self):
-        self.leader = {} # maps a member to the group's leader
-        self.group = {} # maps a group leader to the group (which is a set)
+    val0, len0 = recursive_subclustering(c1, t, root)
+    val1, len1 = recursive_subclustering(c2, t, root)
 
-    def add(self, a, b):
-        leadera = self.leader.get(a)
-        leaderb = self.leader.get(b)
-        if leadera is not None:
-            if leaderb is not None:
-                if leadera == leaderb: return # nothing to do
-                groupa = self.group[leadera]
-                groupb = self.group[leaderb]
-                if len(groupa) < len(groupb):
-                    a, leadera, groupa, b, leaderb, groupb = b, leaderb, groupb, a, leadera, groupa
-                groupa |= groupb
-                del self.group[leaderb]
-                for k in groupb:
-                    self.leader[k] = leadera
-            else:
-                self.group[leadera].add(b)
-                self.leader[b] = leadera
-        else:
-            if leaderb is not None:
-                self.group[leaderb].add(a)
-                self.leader[a] = leaderb
-            else:
-                self.leader[a] = self.leader[b] = a
-                self.group[a] = set([a, b])
+    if np.std(np.array([len0, len1])) > 0.0001:
+        ret0, ret1 = [c1], [c2]
+    else:
+        ret0, ret1 = [], []
+
+    ret = []
+
+    if val0 == []:
+        ret= ret0 + ret
+    else: 
+        ret = val0 + ret
+
+    if val1 == []:
+        ret = ret + ret1
+    else:
+        ret = ret + val1
+    
+    return(ret, max(len0, len1) + t.get_distance(root, parent))
 
 
 parser = argparse.ArgumentParser()
@@ -52,7 +56,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-fasta", "--fasta_file", help="path to FASTQ file")
 parser.add_argument("-clusters", "--cluster_file", help="path to clusters file")
 parser.add_argument("-out", "--output_directory", help="path to the output directory")
-parser.add_argument("-ref_thr", "--refine_threshold", help="distance threshold used for dividing branches into clusters")
 
 args = parser.parse_args()
 
@@ -81,7 +84,7 @@ with open(cluster_file, 'r') as f:
 # Read the cluster file. For each cluster, use clustal omega to create alignment and guide tree
 final_out = open(out_file, 'w')
 indiv_cluster_file = args.output_directory + '/tmp_ind_cluster.fasta'
-for c in range(-1, max(clusters)):
+for c in range(0, max(clusters)):
     print('\t Refinement: processing cluster ' + str(c))
     with open(indiv_cluster_file, 'w') as out:
         with open(cluster_file, 'r') as f:
@@ -98,33 +101,40 @@ for c in range(-1, max(clusters)):
     guide_tree_file = args.output_directory + '/tmp_guide_tree.xml'
     clustal_out_file = args.output_directory + '/tmp_clustal_alignments.txt'
     os.system('/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/dependencies/./clustalo -i ' 
-              + indiv_cluster_file + '  --guidetree-out=' + guide_tree_file + ' --out ' + clustal_out_file)
+              + indiv_cluster_file + '  --guidetree-out=' + guide_tree_file + ' --out ' + clustal_out_file + ' --force')
 
-    # Parse the guide tree
-    tree = Phylo.read(guide_tree_file, 'newick')
 
-    # Refine the clusters based on the guide tree of Clustal Omega. If the distance between 2 leafs is
-    # greater than a threshold, consider them not related.
-    threshold = float(args.refine_threshold)
-    # Get the names of the leafs
-    leafs = list(tree.get_terminals())
-    names = [x.name for x in leafs]
+    # Check if the tree is worth refining. If the standard deviation of the leaf - root distances are 
+    # long enough, we should probably split the tree.
+    t = PhyloTree(guide_tree_file)
+    std = np.std(np.array([t.get_distance(i) for i in t.get_leaf_names()]))
+
+    if std > 0.0001:
+        print('\t Refinement: cluster ' + str(c) + ' passed the refinement checkpoint. Proceeding with splitting.')
+        
+        leafs = list(t.get_leaf_names())
+        print('\t Refinement: checking  ' + str(len(leafs)) + ' leafs.')
+        
+        # Run the recursive function for determining subclusters.
+        nodes, dist = (recursive_subclustering(t, t, t))
+
+        counter = 0
+        for i in nodes:
+            cluster = i.get_leaf_names()
+            if len(cluster) > 3:
+                counter += 1
+                cluster_name = str(c) + '_' + str(counter)
+                for j in cluster:
+                    final_out.write(j + ',' + cluster_name + '\n')
     
-    ds = DisjointSet()
-    for i in names:
-        for j in names:
-            dist = tree.distance(i, j)
-            if dist <= threshold:
-                ds.add(i,j)
-
-    counter = 0
-    for i in ds.group.keys():
-        cluster = list(ds.group[i])
-        if len(cluster) > 3:
-            counter += 1
-            cluster_name = str(c) + '_' + str(counter)
-            for j in cluster:
-                final_out.write(j + ',' + cluster_name + '\n')
+    else:
+        # If the std of branch length is not enough, just copy all the reads of the cluster. We won't
+        # try to split it further.
+        with open(indiv_cluster_file, 'r') as f:
+            for line in f:
+                if line.startswith('>'):
+                    name = line[1:].strip()
+                    final_out.write(name + ',' + str(c) + '\n')
 
     os.system('rm ' + guide_tree_file)  # clustalO will not overwrite the guidetree file.
     os.system('rm ' + clustal_out_file)

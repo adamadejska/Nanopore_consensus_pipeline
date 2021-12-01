@@ -45,11 +45,8 @@ parser.add_argument("-out", "--output_path", help="path to parsed output file")
 
 args = parser.parse_args()
 
-#blast_file = args.blast_file
-#out_path = args.output_path
-
-blast_file = '/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/result_files/barcode12_small_blastn_result.fa'
-out_path = '/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/result_files'
+blast_file = args.blast_file
+out_path = args.output_path
 
 file_name = blast_file.split('/')[-1].split('_')[0]
 out_file = out_path + '/' + file_name + '_final_cluster_identities.csv'
