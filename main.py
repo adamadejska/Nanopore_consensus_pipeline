@@ -52,8 +52,32 @@ def parse_config_file(config_path):
                         sys.stderr.write('The provided number for ' + param + ' is not a whole number.\n')
                         sys.exit()
 
+    # Set up the name of the data that we will use for naming all the files.
+    input_config['name'] = input_config['fastq'].split('/')[-1].split('.')[0]
+
     sys.stdout.write('Main: The config file looks correct. \n')
     return(input_config)        
+
+
+def setup_environment(input_parameters):
+    """
+    This function creates a separate folder for temporary files in the tmp folder and results folder.
+         Will make multiprocessing much easier to manage. 
+    """
+
+    sys.stdout.write('Main: Creating directories. \n')
+    # Create a separate folder in the tmp directory.
+    os.system(input_parameters['tmp'] + ' mkdir ' + input_parameters['name'] + '_tmp')
+
+    input_parameters['tmp'] = input_parameters['tmp'] + '/' + input_parameters['name'] + '_tmp/'
+
+    # Create a separate folder in the results directory
+    os.system(input_parameters['results'] + ' mkdir ' + input_parameters['name'] + '_results')
+
+    input_parameters['results'] = input_parameters['results'] + '/' + input_parameters['name'] + '_results/'
+
+    sys.stdout.write('Main: Directories created sucessfully. \n')
+    return(input_parameters)
 
 
 def launch_pipeline(input_parameters):
@@ -64,7 +88,7 @@ def launch_pipeline(input_parameters):
     sys.stdout.write('Main: Launching the pipeline.\n')
     current_dir = '/'.join(__file__.split('/')[:-1])
     fastq_file = input_parameters['fastq'].split('/')[-1]
-
+    """
     ## Run QC script.
     sys.stdout.write('Main: Launch Quality Control script.\n')
     os.system('python3 ' + current_dir + '/src/quality_control.py -fastq ' + input_parameters['fastq'] +
@@ -102,19 +126,22 @@ def launch_pipeline(input_parameters):
     if not os.path.exists(clustering_file_path):
         sys.stderr.write('Main: the UMAP clustering script did not produce expected csv file in the tmp directory.\n')
         sys.exit()
-
+    """
+    qc_file_path = input_parameters['tmp'] + fastq_file.split('.')[0] + '.fasta'
     if input_parameters['refinement']:
+        """
         ## Run refine clusters script.
         sys.stdout.write('Main: Launch refine clusters script.\n')
         os.system('python3 ' + current_dir + '/src/refine_clusters.py -fasta ' + qc_file_path + 
                     ' -clusters ' + clustering_file_path + ' -out ' + input_parameters['tmp'])
-
+        """
+        
         refined_file_path = input_parameters['tmp'] + fastq_file.split('.')[0] + '_refined_clusters.txt'
         # Check if the UMAP clustering outputted a correct file to correct directory.
         if not os.path.exists(refined_file_path):
             sys.stderr.write('Main: the refinement script did not produce expected txt file in the tmp directory.\n')
             sys.exit()
-
+        
         ## Run consensus script.
         sys.stdout.write('Main: Launch define consensus script.\n')
         os.system('python3 ' + current_dir + '/src/make_consensus.py -fasta ' + qc_file_path + 
@@ -128,6 +155,7 @@ def launch_pipeline(input_parameters):
             sys.exit()
     else:
         ## Run consensus script.
+        clustering_file_path = input_parameters['tmp'] + fastq_file.split('.')[0] + '_kmer_matrix_clustering.csv'
         sys.stdout.write('Main: Launch define consensus script.\n')
         os.system('python3 ' + current_dir + '/src/make_consensus.py -fasta ' + qc_file_path + 
                     ' -clusters ' + clustering_file_path + ' -tmp_out ' + input_parameters['tmp'] + 
@@ -185,12 +213,10 @@ def main():
 
     params = parser.parse_args()
     params.config_file = os.path.abspath(params.config_file)
-    if params.max_cores:
-        max_cores = params.max_cores
-    else:
-        max_cores = 1
     
     input_parameters = parse_config_file(params.config_file)
+
+    setup_environment(input_parameters)
 
     launch_pipeline(input_parameters)
 
