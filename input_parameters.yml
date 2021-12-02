@@ -10,13 +10,13 @@
 ####################################################################################################
 
 # Full path to the files need to be provided. One fastq file at a time can be analyzed. 
-fastq: /home/ada/Desktop/16S_alignments/barcode_files/barcode06_small.fastq
+fastq: /home/ada/Desktop/16S_alignments/barcode_files/barcode10_small.fastq
 tmp: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/tmp/
 dependencies: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/dependencies/
 results: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/result_files/
 
 # Set to True if you want to include a refinement of the clusters based on the MSA guide tree.
-refinement: True
+refinement: False
  
 # Parameters used for clustering and refinement. 
 parameters:

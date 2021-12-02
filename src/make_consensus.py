@@ -128,7 +128,3 @@ with open(out, 'w') as f:
             f.write('>cluster ' + k + '\n')
             f.write(consensus + '\n')
 
-# Using the consensus file, run each sequence in BLASTN
-blast_out =  args.output_path + '/' + out_name + '_blastn_result.fa'
-blast_path = args.dependencies_path + '/ncbi-blast-2.12.0+/blastdb/'
-os.system('blastn -db ' + blast_path + '16S_ribosomal_RNA -query ' + out + ' -out ' + blast_out + ' -max_target_seqs 5')
