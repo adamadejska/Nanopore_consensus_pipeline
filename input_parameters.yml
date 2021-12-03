@@ -10,7 +10,7 @@
 ####################################################################################################
 
 # Full path to the files need to be provided. One fastq file at a time can be analyzed. 
-fastq: /home/ada/Desktop/16S_alignments/barcode_files/barcode10_small.fastq
+fastq: /home/ada/Desktop/16S_alignments/barcode_files/barcode10_x_small.fastq
 tmp: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/tmp/
 dependencies: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/dependencies/
 results: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/result_files/
@@ -25,7 +25,7 @@ parameters:
   umap_n_neighbors: 5                        # Controls how UMAP balances local versus global structure in the data
   hdbscan_min_cluster_size: 9                # Min number of reads that will create a cluster
   hdbscan_cluster_selection_method: leaf     # Determine how it selects flat clusters from the cluster tree hierarchy (eom or leaf)
-
+  reads_per_job: 150                        # Number of reads that will be analyzed at once. 
 
 
   #####

@@ -20,7 +20,5 @@ consensus = args.consensus_file
 
 # Using the consensus file, run each sequence in BLASTN
 blast_out =  args.output_path + '/' + args.job_name + '_blastn_result.fa'
-print('consensus path: ' + consensus)
-print('out_folder: ' + blast_out)
 blast_path = args.dependencies_path + '/ncbi-blast-2.12.0+/blastdb/'
 os.system('blastn -db ' + blast_path + '16S_ribosomal_RNA -query ' + args.consensus_file + ' -out ' + blast_out + ' -max_target_seqs 5')

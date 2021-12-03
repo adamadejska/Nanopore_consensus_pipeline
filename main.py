@@ -3,6 +3,7 @@
 #######################################################################
 
 import argparse
+import multiprocessing as mp
 import os
 import sys 
 import yaml
@@ -22,7 +23,7 @@ def parse_config_file(config_path):
     # Make sure that all required fields are filled in and exist.
     required_fields = ['fastq', 'tmp', 'results', 'dependencies', 'parameters']
     required_parameters = ['kmer_len', 'umap_n_components', 'umap_n_neighbors', 'hdbscan_min_cluster_size',
-                            'hdbscan_cluster_selection_method']
+                            'hdbscan_cluster_selection_method', 'reads_per_job']
 
     for field in required_fields:
         if field == 'fastq':
@@ -88,8 +89,32 @@ def setup_environment(input_parameters):
         sys.stdout.write('Please, delete or move the folder to a different location \n')
         sys.exit()
 
+    # Create a folder for subfiles of the FASTQ file. 
+    fastq_folder = tmpr_folder + '/fastq_files'
+    if not os.path.isdir(fastq_folder):
+        os.mkdir(fastq_folder)
+
+        input_parameters['fastq_folder'] = fastq_folder + '/'
+    else:
+        sys.stdout.write('Main: Cowardly refuses to overwrite the existing folder ' + fastq_folder + '\n')
+        sys.stdout.write('Please, delete or move the folder to a different location \n')
+        sys.exit()
+
     sys.stdout.write('Main: Directories created sucessfully. \n')
     return(input_parameters)
+
+def divide_fastq_file(input_parameters, qc_fastq_path):
+    """
+    This function divides the original FASTQ file into a smaller files with # of reads indicated by the user.
+    Each file will be analyzed separately during multiprocessing step.
+    """
+    sys.stdout.write('Main: Divide fastq file into smaller jobs.\n')
+    # split the files using linux split function
+    os.system('split -l ' + str(input_parameters['parameters']['reads_per_job']*2) + ' ' + qc_fastq_path +
+              ' ' + input_parameters['fastq_folder'] + input_parameters['name'])
+
+    fastq_list = [input_parameters['fastq_folder'] + i for i in os.listdir(input_parameters['fastq_folder'])]
+    return(fastq_list)
 
 
 def run_QC(input_parameters):
@@ -100,6 +125,7 @@ def run_QC(input_parameters):
     sys.stdout.write('Main: Launching the pipeline.\n')
     current_dir = '/'.join(__file__.split('/')[:-1])
     
+    sys.stdout.write('Main: Launch quality control script. \n')
     ## Run QC script.
     os.system('python3 ' + current_dir + '/src/quality_control.py -fastq ' + input_parameters['fastq'] +
                      ' -out ' + input_parameters['tmp'])
@@ -110,21 +136,24 @@ def run_QC(input_parameters):
         sys.stderr.write('Main: the QC script did not produce expected fasta file in the tmp directory.\n')
         sys.exit()
 
+    return(qc_file_path)
 
-def launch_pipeline(input_parameters, fasta_file):
+
+def launch_pipeline(input_parameters, qc_file_path):
     """
     This function launches all the scripts in the correct order.  The DAG can be viewed in the README.
     """
     current_dir = '/'.join(__file__.split('/')[:-1])
-    qc_file_path = input_parameters['tmp'] + input_parameters['name'] + '.fasta'
+    input_parameters['name'] = qc_file_path.split('/')[-1]
 
-    sys.stdout.write('Main: Working on file ' + fasta_file.split('/')[-1])
+    sys.stdout.write('Main: Working on file ' + qc_file_path.split('/')[-1] + '\n')
 
     ## Run kmer freq matrix script.
-    fasta_file = input_parameters['name'] + '.fasta'
+    fasta_file = qc_file_path.split('/')[-1]
     sys.stdout.write('Main: Launch kmer frequency matrix construction.\n')
-    os.system('julia ' + current_dir + '/src/main.jl ' + input_parameters['tmp'] + ' ' + fasta_file + ' ' +
-                     input_parameters['tmp'] + ' ' + str(input_parameters['parameters']['kmer_len']))
+    os.system('julia ' + current_dir + '/src/main.jl ' + input_parameters['fastq_folder'] + ' ' + 
+                     fasta_file + ' ' + input_parameters['tmp'] + ' ' + 
+                     str(input_parameters['parameters']['kmer_len']))
 
     kmer_file_path = input_parameters['tmp'] + input_parameters['name'] + '_kmer_matrix.csv'
     # Check if the kmer freq script outputted a correct file to correct directory.
@@ -235,12 +264,17 @@ def main():
 
     setup_environment(input_parameters)
 
-    sys.stdout.write('Main: Launch Quality Control script.\n')
-    run_QC(input_parameters)
+    qc_fastq_path = run_QC(input_parameters)
 
-    fasta_file = input_parameters['name'] + '.fasta'
+    fastq_file_list = divide_fastq_file(input_parameters, qc_fastq_path)
 
-    launch_pipeline(input_parameters, fasta_file)
+    pool = mp.Pool(mp.cpu_count())
+    results = [pool.apply(launch_pipeline, args=(input_parameters, file)) for file in fastq_file_list]
+    pool.close() 
+    #launch_pipeline(input_parameters, qc_fasta_path)
+
+    sys.stdout.write('Main: Finished sucessfully.\n')
+
 
 if __name__ == '__main__':
     main()
