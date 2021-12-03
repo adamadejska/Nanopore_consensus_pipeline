@@ -120,3 +120,12 @@ plt.savefig( args.results_out + '/' + name + '_umap.png')
 with open(out_file, 'w') as out:
     for i in range(0, len(labels)):
         out.write(species[i] + ',' + str(labels[i]) + ',' +  str(standard_embedding[i][0]) + ',' + str(standard_embedding[i][1]) + '\n') 
+
+
+##  Collect reads that were labeled as noise. We will reuse them for the final clustering step.
+noise_file = args.output_path + '/' + name + '_noise.csv'
+
+with open(noise_file, 'a') as out:
+    for i in range(0, len(labels)):
+        if labels[i] == '-1':
+            out.write(species[i] + '\n')
