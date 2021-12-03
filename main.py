@@ -67,14 +67,26 @@ def setup_environment(input_parameters):
 
     sys.stdout.write('Main: Creating directories. \n')
     # Create a separate folder in the tmp directory.
-    os.mkdir(input_parameters['tmp'] + '/' + input_parameters['name'] + '_tmp')
+    tmpr_folder = input_parameters['tmp'] + '/' + input_parameters['name'] + '_tmp'
+    if not os.path.isdir(tmpr_folder):
+        os.mkdir(tmpr_folder)
 
-    input_parameters['tmp'] = input_parameters['tmp'] + '/' + input_parameters['name'] + '_tmp/'
+        input_parameters['tmp'] = tmpr_folder + '/'
+    else:
+        sys.stdout.write('Main: Cowardly refuses to overwrite the existing folder ' + tmpr_folder + '\n')
+        sys.stdout.write('Please, delete or move the folder to a different location \n')
+        sys.exit()
 
     # Create a separate folder in the results directory
-    os.mkdir(input_parameters['results'] + '/' + input_parameters['name'] + '_results')
+    results_folder = input_parameters['results'] + '/' + input_parameters['name'] + '_results'
+    if not os.path.isdir(results_folder):
+        os.mkdir(results_folder)
 
-    input_parameters['results'] = input_parameters['results'] + '/' + input_parameters['name'] + '_results/'
+        input_parameters['results'] = results_folder + '/'
+    else:
+        sys.stdout.write('Main: Cowardly refuses to overwrite the existing folder ' + results_folder + '\n')
+        sys.stdout.write('Please, delete or move the folder to a different location \n')
+        sys.exit()
 
     sys.stdout.write('Main: Directories created sucessfully. \n')
     return(input_parameters)
