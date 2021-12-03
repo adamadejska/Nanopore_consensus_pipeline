@@ -42,14 +42,14 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("-blast", "--blast_file", help="path to BLASTN output file")
 parser.add_argument("-out", "--output_path", help="path to parsed output file")
+parser.add_argument("-name", "--job_name", help="the name of the job / what the outfiles will use as part of their name")
 
 args = parser.parse_args()
 
 blast_file = args.blast_file
 out_path = args.output_path
 
-file_name = blast_file.split('/')[-1].split('_')[0]
-out_file = out_path + '/' + file_name + '_final_cluster_identities.csv'
+out_file = out_path + '/' + args.job_name + '_final_cluster_identities.csv'
 
 
 # Read the BLAST output file line by line and extract the info on the top hit for each cluster.

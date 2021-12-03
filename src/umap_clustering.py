@@ -27,13 +27,13 @@ parser.add_argument("-nc", "--n_components", help="number of components used for
 parser.add_argument("-nn", "--umap_n_neighbors", help="number of neighbours for UMAP clustering (local versus global structure)")
 parser.add_argument("-min_cs", "--hdbscan_min_cluster_size", help="min number of reads that will create a cluster")
 parser.add_argument("-csm", "--hdbscan_cluster_selection_method", help="method used to select clusters in hdbscan")
+parser.add_argument("-name", "--job_name", help="the name of the job / what the outfiles will use as part of their name")
 
 args = parser.parse_args()
 
 # Read in the kmer frequency file
 file_name = args.kmer_freq_matrix
-out_path = args.output_path
-name = file_name.split('/')[-1].split('.')[0]
+name = args.job_name
 
 df = pd.read_csv(file_name, index_col=0)
 species = df.index.tolist()
@@ -113,7 +113,7 @@ for i in range (0, max(labels)+1):
 
 # Make a table of reads and which cluster they were clustered into
 sys.stdout.write('\tUMAP: Write output files. \n')
-out_file = out_path + '/' + name + '_clustering.csv'
+out_file = args.output_path + '/' + name + '_clustering.csv'
 
 plt.savefig( args.results_out + '/' + name + '_umap.png')
 

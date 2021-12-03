@@ -56,6 +56,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-fasta", "--fasta_file", help="path to FASTQ file")
 parser.add_argument("-clusters", "--cluster_file", help="path to clusters file")
 parser.add_argument("-out", "--output_directory", help="path to the output directory")
+parser.add_argument("-name", "--job_name", help="the name of the job / what the outfiles will use as part of their name")
 
 args = parser.parse_args()
 
@@ -64,7 +65,7 @@ fasta_file = args.fasta_file
 cluster_file = args.cluster_file
 
 name = cluster_file.split('/')[-1].replace('_kmer_matrix_clustering.csv', '')
-out_file = args.output_directory + '/'+ name + '_refined_clusters.txt'
+out_file = args.output_directory + '/'+ args.job_name + '_refined_clusters.txt'
 
 # Read in the fastq file and save which read has what sequence
 name_to_seq = {}

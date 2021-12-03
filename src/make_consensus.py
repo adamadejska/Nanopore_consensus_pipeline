@@ -86,7 +86,8 @@ parser.add_argument('-tmp_out', "--tmp_output_path", help="path to the tmp folde
 parser.add_argument("-out", "--output_path", help="path to the output folder")
 parser.add_argument("-dep", "--dependencies_path", 
                     help="path to the dependenceis folder (folder with blast, minimap, etc.)")
-                    
+parser.add_argument("-name", "--job_name", help="the name of the job / what the outfiles will use as part of their name")
+                   
 args = parser.parse_args()
 
 fasta_file = args.fasta_file
@@ -115,15 +116,14 @@ with open(cluster_file, 'r') as f:
             cluster_to_reads[c].append(id)
 
 # Make a consensus sequence for each cluster.
-out_name = fasta_file.split('/')[-1].split('.')[0]
-out = args.output_path + '/' + out_name + '_consensus.txt'
+out = args.output_path + '/' + args.job_name + '_consensus.txt'
 
 with open(out, 'w') as f:
     for k, v in cluster_to_reads.items():
         #if k == '-1':   # Skip the unclassified reads
         #    continue
 
-        consensus = make_consensus_seq(v, full_sequences, out_name, tmp_path)
+        consensus = make_consensus_seq(v, full_sequences, args.job_name, tmp_path)
         if len(consensus) > 0:
             f.write('>cluster ' + k + '\n')
             f.write(consensus + '\n')

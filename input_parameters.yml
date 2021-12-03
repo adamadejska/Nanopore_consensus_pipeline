@@ -25,7 +25,6 @@ parameters:
   umap_n_neighbors: 5                        # Controls how UMAP balances local versus global structure in the data
   hdbscan_min_cluster_size: 9                # Min number of reads that will create a cluster
   hdbscan_cluster_selection_method: leaf     # Determine how it selects flat clusters from the cluster tree hierarchy (eom or leaf)
-  ram: 8                                     # Maximum RAM (in GB) that can be used during the analysis. 
 
 
 
