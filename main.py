@@ -92,17 +92,15 @@ def setup_environment(input_parameters):
     return(input_parameters)
 
 
-def launch_pipeline(input_parameters):
+def run_QC(input_parameters):
     """
-    This function launches all the scripts in the correct order.  The DAG can be viewed in the README.
+    This function is a first step of the pipeline. It runs the QC step on the whole fastq file before
+    it gets split into smaller files.
     """
-
     sys.stdout.write('Main: Launching the pipeline.\n')
     current_dir = '/'.join(__file__.split('/')[:-1])
-    fastq_file = input_parameters['fastq'].split('/')[-1]
     
     ## Run QC script.
-    sys.stdout.write('Main: Launch Quality Control script.\n')
     os.system('python3 ' + current_dir + '/src/quality_control.py -fastq ' + input_parameters['fastq'] +
                      ' -out ' + input_parameters['tmp'])
 
@@ -111,6 +109,16 @@ def launch_pipeline(input_parameters):
     if not os.path.exists(qc_file_path):
         sys.stderr.write('Main: the QC script did not produce expected fasta file in the tmp directory.\n')
         sys.exit()
+
+
+def launch_pipeline(input_parameters, fasta_file):
+    """
+    This function launches all the scripts in the correct order.  The DAG can be viewed in the README.
+    """
+    current_dir = '/'.join(__file__.split('/')[:-1])
+    qc_file_path = input_parameters['tmp'] + input_parameters['name'] + '.fasta'
+
+    sys.stdout.write('Main: Working on file ' + fasta_file.split('/')[-1])
 
     ## Run kmer freq matrix script.
     fasta_file = input_parameters['name'] + '.fasta'
@@ -220,11 +228,6 @@ def main():
     inputs.add_argument('--config_file', dest='config_file', help='Config file to be used in the '
                         'run.', type=str, default=None)
 
-    parser.add_argument('--max-cores-per-job', dest='max_cores', help='Maximum cores to use per '
-                        'job. This value should be set to the number of cpus on the '
-                        'smallest node in a cluster.',
-                        type=int, required=False, default=None)
-
     params = parser.parse_args()
     params.config_file = os.path.abspath(params.config_file)
     
@@ -232,7 +235,12 @@ def main():
 
     setup_environment(input_parameters)
 
-    launch_pipeline(input_parameters)
+    sys.stdout.write('Main: Launch Quality Control script.\n')
+    run_QC(input_parameters)
+
+    fasta_file = input_parameters['name'] + '.fasta'
+
+    launch_pipeline(input_parameters, fasta_file)
 
 if __name__ == '__main__':
     main()
