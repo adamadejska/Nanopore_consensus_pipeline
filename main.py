@@ -144,6 +144,7 @@ def launch_pipeline(input_parameters, qc_file_path):
     This function launches all the scripts in the correct order.  The DAG can be viewed in the README.
     """
     current_dir = '/'.join(__file__.split('/')[:-1])
+    job_name = input_parameters['name']
     input_parameters['name'] = qc_file_path.split('/')[-1]
 
     sys.stdout.write('Main: Working on file ' + qc_file_path.split('/')[-1] + '\n')
@@ -168,7 +169,8 @@ def launch_pipeline(input_parameters, qc_file_path):
                 ' -nn ' + str(input_parameters['parameters']['umap_n_neighbors']) + ' -min_cs ' +
                 str(input_parameters['parameters']['hdbscan_min_cluster_size']) + ' -csm ' + 
                 input_parameters['parameters']['hdbscan_cluster_selection_method'] + ' -res_out ' +
-                input_parameters['results'] + ' -name ' + input_parameters['name'])
+                input_parameters['results'] + ' -fn ' + input_parameters['name'] + ' -jn ' + 
+                job_name)
 
     clustering_file_path = input_parameters['tmp'] + input_parameters['name'] + '_clustering.csv'
     # Check if the UMAP clustering outputted a correct file to correct directory.

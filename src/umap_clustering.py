@@ -27,13 +27,14 @@ parser.add_argument("-nc", "--n_components", help="number of components used for
 parser.add_argument("-nn", "--umap_n_neighbors", help="number of neighbours for UMAP clustering (local versus global structure)")
 parser.add_argument("-min_cs", "--hdbscan_min_cluster_size", help="min number of reads that will create a cluster")
 parser.add_argument("-csm", "--hdbscan_cluster_selection_method", help="method used to select clusters in hdbscan")
-parser.add_argument("-name", "--job_name", help="the name of the job / what the outfiles will use as part of their name")
+parser.add_argument("-fn", "--file_name", help="the name of the file to process")
+parser.add_argument("-jn", "--job_name", help="the name of the job / what the outfiles will use as part of their name")
 
 args = parser.parse_args()
 
 # Read in the kmer frequency file
 file_name = args.kmer_freq_matrix
-name = args.job_name
+name = args.file_name
 
 df = pd.read_csv(file_name, index_col=0)
 species = df.index.tolist()
@@ -123,9 +124,9 @@ with open(out_file, 'w') as out:
 
 
 ##  Collect reads that were labeled as noise. We will reuse them for the final clustering step.
-noise_file = args.output_path + '/' + name + '_noise.csv'
+noise_file = args.output_path + '/' + args.job_name + '_noise.csv'
 
 with open(noise_file, 'a') as out:
     for i in range(0, len(labels)):
-        if labels[i] == '-1':
+        if labels[i] == -1:
             out.write(species[i] + '\n')
