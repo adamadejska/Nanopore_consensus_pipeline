@@ -139,12 +139,11 @@ def run_QC(input_parameters):
     return(qc_file_path)
 
 
-def launch_pipeline(input_parameters, qc_file_path):
+def launch_pipeline(input_parameters, qc_file_path, job_name):
     """
     This function launches all the scripts in the correct order.  The DAG can be viewed in the README.
     """
     current_dir = '/'.join(__file__.split('/')[:-1])
-    job_name = input_parameters['name']
     input_parameters['name'] = qc_file_path.split('/')[-1]
 
     sys.stdout.write('Main: Working on file ' + qc_file_path.split('/')[-1] + '\n')
@@ -197,10 +196,10 @@ def launch_pipeline(input_parameters, qc_file_path):
         sys.stdout.write('Main: Launch define consensus script.\n')
         os.system('python3 ' + current_dir + '/src/make_consensus.py -fasta ' + qc_file_path + 
                     ' -clusters ' + refined_file_path + ' -tmp_out ' + input_parameters['tmp'] + 
-                    ' -out ' + input_parameters['results'] + ' -dep ' + input_parameters['dependencies'] + 
+                    ' -out ' + input_parameters['tmp'] + ' -dep ' + input_parameters['dependencies'] + 
                     ' -name ' + input_parameters['name'])
 
-        consensus_file_path = input_parameters['results'] + input_parameters['name'] + '_consensus.txt'
+        consensus_file_path = input_parameters['tmp'] + input_parameters['name'] + '_consensus.txt'
         # Check if the consensus outputted a correct file to correct directory.
         if not os.path.exists(consensus_file_path):
             sys.stderr.write('Main: the consensus script did not produce expected txt file in the tmp directory.\n')
@@ -210,15 +209,15 @@ def launch_pipeline(input_parameters, qc_file_path):
         sys.stdout.write('Main: Launch define consensus script.\n')
         os.system('python3 ' + current_dir + '/src/make_consensus.py -fasta ' + qc_file_path + 
                     ' -clusters ' + clustering_file_path + ' -tmp_out ' + input_parameters['tmp'] + 
-                    ' -out ' + input_parameters['results'] + ' -dep ' + input_parameters['dependencies'] +
+                    ' -out ' + input_parameters['tmp'] + ' -dep ' + input_parameters['dependencies'] +
                     ' -name ' + input_parameters['name'])
 
-        consensus_file_path = input_parameters['results'] + input_parameters['name'] + '_consensus.txt'
+        consensus_file_path = input_parameters['tmp'] + input_parameters['name'] + '_consensus.txt'
         # Check if the consensus outputted a correct file to correct directory.
         if not os.path.exists(consensus_file_path):
             sys.stderr.write('Main: the consensus script did not produce expected txt file in the tmp directory.\n')
             sys.exit()
-
+    """
     ## Run BLASTN on the consensus sequences.
     sys.stdout.write('\nMain: Launch BLASTN script. \n')
     os.system('python3 ' + current_dir + '/src/run_blastn.py -consensus ' + consensus_file_path +
@@ -243,6 +242,58 @@ def launch_pipeline(input_parameters, qc_file_path):
         sys.stderr.write(parsed_result_file_path)
         sys.stderr.write('Main: the BLAST parsing script did not produce expected txt file in the results directory.\n')
         sys.exit()
+    """
+    return()
+
+def final_clustering(input_parameters, job_name):
+    """
+    After analyzing the small files separately, we need to do one last cummulative analysis of all the consensus 
+        we found and noise reads we've collected.
+    This will result in one comprehensive file with all cluster identities.  
+    """
+    current_dir = '/'.join(__file__.split('/')[:-1])
+
+    sys.stdout.write('Main: Initiating the final analysis of all jobs. \n')
+
+    sys.stdout.write('Main: Concatenate consensus sequences and noise reads. \n')
+    os.system('python3 ' + current_dir + '/src/concatenate_noise_and_consensus.py -fastq ' + input_parameters['fastq'] +
+              ' -consensus ' + input_parameters['tmp'] + ' -noise ' + input_parameters['tmp'] + '/' + job_name + '_noise.csv' + 
+              ' -out ' + input_parameters['tmp'] + ' -name ' + job_name)
+
+    final_reads_file_path = input_parameters['tmp'] + job_name + '_final.fasta'
+    # Check if the UMAP clustering outputted a correct file to correct directory.
+    if not os.path.exists(final_reads_file_path):
+        sys.stderr.write(final_reads_file_path)
+        sys.stderr.write('Main: the concatenate_noise_and_consensus script did not produce expected txt file in the tmp directory.\n')
+        sys.exit()
+
+    ## Run kmer freq matrix script.
+    sys.stdout.write('Main: Launch final kmer frequency matrix construction.\n')
+    os.system('julia ' + current_dir + '/src/main.jl ' + input_parameters['tmp'] + ' ' + 
+                     job_name + '_final.fasta' + ' ' + input_parameters['tmp'] + ' ' + 
+                     str(input_parameters['parameters']['kmer_len']))
+
+    kmer_file_path = input_parameters['tmp'] + job_name + '_final_kmer_matrix.csv'
+    # Check if the kmer freq script outputted a correct file to correct directory.
+    if not os.path.exists(kmer_file_path):
+        sys.stderr.write('Main: the kmer freq matrix script did not produce expected csv file in the tmp directory.\n')
+        sys.exit()
+
+    ## Run UMAP clustering script.
+    sys.stdout.write('Main: Launch final UMAP clustering script.\n')
+    os.system('python3 ' + current_dir + '/src/umap_clustering.py -kmer ' + kmer_file_path + 
+                ' -out ' + input_parameters['tmp'] + ' -nc 1 -nn 2 -min_cs 1 -csm leaf ' + ' -res_out ' +
+                input_parameters['results'] + ' -fn ' + job_name + ' -jn ' + 
+                job_name)
+
+    clustering_file_path = input_parameters['tmp'] + job_name + '_clustering.csv'
+    # Check if the UMAP clustering outputted a correct file to correct directory.
+    if not os.path.exists(clustering_file_path):
+        sys.stderr.write('Main: the UMAP clustering script did not produce expected csv file in the tmp directory.\n')
+        sys.exit()
+
+
+    return()
 
 
 def main():
@@ -270,10 +321,14 @@ def main():
 
     fastq_file_list = divide_fastq_file(input_parameters, qc_fastq_path)
 
+    job_name = input_parameters['name']
+
+    # Mulitprocessing step of the pipeline.
     pool = mp.Pool(mp.cpu_count())
-    results = [pool.apply(launch_pipeline, args=(input_parameters, file)) for file in fastq_file_list]
+    results = [pool.apply(launch_pipeline, args=(input_parameters, file, job_name)) for file in fastq_file_list]
     pool.close() 
-    #launch_pipeline(input_parameters, qc_fasta_path)
+
+    final_clustering(input_parameters, job_name)
 
     sys.stdout.write('Main: Finished sucessfully.\n')
 
