@@ -64,7 +64,6 @@ args = parser.parse_args()
 fasta_file = args.fasta_file
 cluster_file = args.cluster_file
 
-name = cluster_file.split('/')[-1].replace('_kmer_matrix_clustering.csv', '')
 out_file = args.output_directory + '/'+ args.job_name + '_refined_clusters.txt'
 
 # Read in the fastq file and save which read has what sequence
@@ -84,7 +83,7 @@ with open(cluster_file, 'r') as f:
 
 # Read the cluster file. For each cluster, use clustal omega to create alignment and guide tree
 final_out = open(out_file, 'w')
-indiv_cluster_file = args.output_directory + '/tmp_ind_cluster.fasta'
+indiv_cluster_file = args.output_directory + '/' + args.job_name + '_tmp_ind_cluster.fasta'
 for c in range(0, max(clusters)):
     print('\t Refinement: processing cluster ' + str(c))
     with open(indiv_cluster_file, 'w') as out:
@@ -99,8 +98,8 @@ for c in range(0, max(clusters)):
 
     # run clustal omega on the tmp individual cluster file. Use the alignment and resulting guide tree 
     # to refine our clustering even more.
-    guide_tree_file = args.output_directory + '/tmp_guide_tree.xml'
-    clustal_out_file = args.output_directory + '/tmp_clustal_alignments.txt'
+    guide_tree_file = args.output_directory + '/' + args.job_name + '_tmp_guide_tree.xml'
+    clustal_out_file = args.output_directory + '/' + args.job_name + '_tmp_clustal_alignments.txt'
     os.system('/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/dependencies/./clustalo -i ' 
               + indiv_cluster_file + '  --guidetree-out=' + guide_tree_file + ' --out ' + clustal_out_file + ' --force')
 

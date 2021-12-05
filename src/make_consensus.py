@@ -44,7 +44,7 @@ def make_consensus_seq(bacteria_list, full_sequences, out_name, tmp_path):
             f.write(full_sequences[bacteria]+'\n')
 
     minimap_out = tmp_path + '/minimap_out_tax_' + out_name + '.txt'
-    os.system('/home/ada/Desktop/16S_alignments/minimap2/./minimap2 ' + target_file + ' ' +  fasta_file + ' > ' +  minimap_out)
+    os.system('/home/ada/Desktop/16S_alignments/minimap2/./minimap2 ' + target_file + ' ' +  fasta_file + ' > ' +  minimap_out + ' 2> /dev/null')
 
     # Reorient the sequences based on minimap2 output before further processing.
     corrected_fasta = tmp_path + '/cluster_seq_tax_corrected_' + out_name + '.fasta'
@@ -62,11 +62,11 @@ def make_consensus_seq(bacteria_list, full_sequences, out_name, tmp_path):
 
     msa_file = tmp_path + '/cluster_aligned_tax_' + out_name + '.msf'
     # Use MAFFT to align the sequences and create a temporary MSA file
-    os.system('mafft ' + corrected_fasta + ' > ' + msa_file)
+    os.system('mafft ' + corrected_fasta + ' > ' + msa_file + ' 2> /dev/null')
 
     consensus_file = tmp_path + '/cluster_consensus_tax_' + out_name + '.fasta'
     # Use em_cons for creating a consensus sequence from the multiple alignment. 
-    os.system('em_cons ' + msa_file + ' ' + consensus_file)
+    os.system('em_cons ' + msa_file + ' ' + consensus_file + ' 2> /dev/null')
 
     # Create a consensus without the 'N's
     no_n_consensus = ''
