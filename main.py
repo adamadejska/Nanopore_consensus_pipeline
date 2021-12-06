@@ -218,30 +218,7 @@ def launch_pipeline(input_parameters, qc_file_path, job_name):
             sys.stderr.write('Main:' + input_parameters['name'] + ' the consensus script did not produce expected txt file in the tmp directory.\n')
             sys.exit()
     """
-    ## Run BLASTN on the consensus sequences.
-    sys.stdout.write('\nMain: Launch BLASTN script. \n')
-    os.system('python3 ' + current_dir + '/src/run_blastn.py -consensus ' + consensus_file_path +
-             ' -out ' + input_parameters['tmp'] + ' -dep ' + input_parameters['dependencies'] + 
-             ' -name ' + input_parameters['name'])
-
-    # Check if the UMAP clustering outputted a correct file to correct directory.
-    blastn_result_file_path = input_parameters['tmp'] + input_parameters['name'] + '_blastn_result.fa'
-    if not os.path.exists(blastn_result_file_path):
-        sys.stderr.write(blastn_result_file_path)
-        sys.stderr.write('Main: the BLASTN script did not produce expected txt file in the tmp directory.\n')
-        sys.exit()
     
-    ## Run BLASTN parsing script.
-    sys.stdout.write('Main: Launch BLASTN output parsing script.\n')
-    os.system('python3 ' + current_dir + '/src/parse_blast_output.py -blast ' + blastn_result_file_path +  
-                ' -out ' + input_parameters['results'] + ' -name ' + input_parameters['name'])
-
-    parsed_result_file_path = input_parameters['results'] + input_parameters['name'] + '_final_cluster_identities.csv'
-    # Check if the UMAP clustering outputted a correct file to correct directory.
-    if not os.path.exists(parsed_result_file_path):
-        sys.stderr.write(parsed_result_file_path)
-        sys.stderr.write('Main: the BLAST parsing script did not produce expected txt file in the results directory.\n')
-        sys.exit()
     """
     return()
 
@@ -260,10 +237,10 @@ def final_clustering(input_parameters, qc_fasta_path, job_name):
               ' -noise ' + input_parameters['tmp'] + '/' + job_name + '_noise.csv' + 
               ' -out ' + input_parameters['tmp'] + ' -name ' + job_name)
 
-    final_reads_file_path = input_parameters['tmp'] + job_name + '_noise.fasta'
+    noise_reads_file_path = input_parameters['tmp'] + job_name + '_noise.fasta'
     # Check if the UMAP clustering outputted a correct file to correct directory.
-    if not os.path.exists(final_reads_file_path):
-        sys.stderr.write(final_reads_file_path)
+    if not os.path.exists(noise_reads_file_path):
+        sys.stderr.write(noise_reads_file_path)
         sys.stderr.write('Main: the concatenate_noise_and_consensus script did not produce expected txt file in the tmp directory.\n')
         sys.exit()
 
@@ -283,10 +260,9 @@ def final_clustering(input_parameters, qc_fasta_path, job_name):
     sys.stdout.write('Main: Launch final UMAP clustering script.\n')
     os.system('python3 ' + current_dir + '/src/umap_clustering.py -kmer ' + kmer_file_path + 
                 ' -out ' + input_parameters['tmp'] + ' -nc 1 -nn 2 -min_cs 2 -csm leaf ' + ' -res_out ' +
-                input_parameters['results'] + ' -fn ' + job_name + ' -jn ' + 
-                job_name)
+                input_parameters['results'] + ' -fn noise -jn noise ')
 
-    clustering_file_path = input_parameters['tmp'] + job_name + '_clustering.csv'
+    clustering_file_path = input_parameters['tmp'] + 'noise_clustering.csv'
     # Check if the UMAP clustering outputted a correct file to correct directory.
     if not os.path.exists(clustering_file_path):
         sys.stderr.write('Main: the UMAP clustering script did not produce expected csv file in the tmp directory.\n')
@@ -297,15 +273,48 @@ def final_clustering(input_parameters, qc_fasta_path, job_name):
     os.system('python3 ' + current_dir + '/src/make_consensus.py -fasta ' + qc_fasta_path + 
                 ' -clusters ' + clustering_file_path + ' -tmp_out ' + input_parameters['tmp'] + 
                 ' -out ' + input_parameters['tmp'] + ' -dep ' + input_parameters['dependencies'] +
-                ' -name ' + job_name)
+                ' -name noise')
 
-    consensus_file_path = input_parameters['tmp'] + job_name + '_consensus.txt'
+    consensus_file_path = input_parameters['tmp'] + 'noise_consensus.txt'
     # Check if the consensus outputted a correct file to correct directory.
     if not os.path.exists(consensus_file_path):
         sys.stderr.write('Main: the consensus script did not produce expected txt file in the tmp directory.\n')
         sys.exit()
 
-    ## TODO: Concatenate the consensus reads from the smaller jobs here before the BLASTN run.
+    sys.stdout.write('Main: Launch concatenate consensus files script.\n')
+    os.system('python3 ' + current_dir + '/src/concatenate_consensus.py -cons ' + input_parameters['tmp'] + 
+                ' -out ' + input_parameters['results'] + ' -name ' + job_name)
+
+    final_consensus_file_path = input_parameters['results'] + job_name + '_final_consensus.fasta'
+    # Check if the concatenation outputted a correct file to correct directory.
+    if not os.path.exists(final_consensus_file_path):
+        sys.stderr.write('Main: the concatenation script did not produce expected txt file in the results directory.\n')
+        sys.exit()
+
+    ## Run BLASTN on the consensus sequences.
+    sys.stdout.write('\nMain: Launch BLASTN script. \n')
+    os.system('python3 ' + current_dir + '/src/run_blastn.py -consensus ' + final_consensus_file_path +
+             ' -out ' + input_parameters['tmp'] + ' -dep ' + input_parameters['dependencies'] + 
+             ' -name ' + job_name)
+
+    # Check if the UMAP clustering outputted a correct file to correct directory.
+    blastn_result_file_path = input_parameters['tmp'] + job_name + '_blastn_result.fa'
+    if not os.path.exists(blastn_result_file_path):
+        sys.stderr.write(blastn_result_file_path)
+        sys.stderr.write('Main: the BLASTN script did not produce expected txt file in the tmp directory.\n')
+        sys.exit()
+    
+    ## Run BLASTN parsing script.
+    sys.stdout.write('Main: Launch BLASTN output parsing script.\n')
+    os.system('python3 ' + current_dir + '/src/parse_blast_output.py -blast ' + blastn_result_file_path +  
+                ' -out ' + input_parameters['results'] + ' -name ' + job_name)
+
+    parsed_result_file_path = input_parameters['results'] + job_name + '_final_cluster_identities.csv'
+    # Check if the UMAP clustering outputted a correct file to correct directory.
+    if not os.path.exists(parsed_result_file_path):
+        sys.stderr.write(parsed_result_file_path)
+        sys.stderr.write('Main: the BLAST parsing script did not produce expected txt file in the results directory.\n')
+        sys.exit()
 
     return()
 
@@ -350,7 +359,7 @@ def main():
     pool.close() 
     pool.join()
 
-    #final_clustering(input_parameters, qc_fasta_path, job_name)
+    final_clustering(input_parameters, qc_fasta_path, job_name)
 
     sys.stdout.write('Main: Finished sucessfully.\n')
 
