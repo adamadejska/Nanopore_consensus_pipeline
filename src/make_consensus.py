@@ -24,7 +24,7 @@ def reverse_strand(strand, orientation):
         return(new_strand)
 
         
-def make_consensus_seq(bacteria_list, full_sequences, out_name, tmp_path):
+def make_consensus_seq(bacteria_list, full_sequences, out_name, tmp_path, dep_path):
     # This function creates a consensus sequence for the list of bacteria provided
     # and the dictionary of full sequences from the 16S barcode files. 
 
@@ -44,7 +44,7 @@ def make_consensus_seq(bacteria_list, full_sequences, out_name, tmp_path):
             f.write(full_sequences[bacteria]+'\n')
 
     minimap_out = tmp_path + '/minimap_out_tax_' + out_name + '.txt'
-    os.system('/home/ada/Desktop/16S_alignments/minimap2/./minimap2 ' + target_file + ' ' +  fasta_file + ' > ' +  minimap_out + ' 2> /dev/null')
+    os.system(dep_path + '/minimap2/./minimap2 ' + target_file + ' ' +  fasta_file + ' > ' +  minimap_out + ' 2> /dev/null')
 
     # Reorient the sequences based on minimap2 output before further processing.
     corrected_fasta = tmp_path + '/cluster_seq_tax_corrected_' + out_name + '.fasta'
@@ -123,7 +123,7 @@ with open(out, 'w') as f:
         #if k == '-1':   # Skip the unclassified reads
         #    continue
 
-        consensus = make_consensus_seq(v, full_sequences, args.job_name, tmp_path)
+        consensus = make_consensus_seq(v, full_sequences, args.job_name, tmp_path, args.dependencies_path)
         if len(consensus) > 0:
             f.write('>cluster ' + k + '\n')
             f.write(consensus + '\n')
