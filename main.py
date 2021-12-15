@@ -103,6 +103,7 @@ def setup_environment(input_parameters):
     sys.stdout.write('Main: Directories created sucessfully. \n')
     return(input_parameters)
 
+
 def divide_fastq_file(input_parameters, qc_fastq_path):
     """
     This function divides the original FASTQ file into a smaller files with # of reads indicated by the user.
@@ -183,7 +184,7 @@ def launch_pipeline(input_parameters, qc_file_path, job_name):
         sys.stdout.write('Main:' + input_parameters['name'] + ' Launch refine clusters script.\n')
         os.system('python3 ' + current_dir + '/src/refine_clusters.py -fasta ' + qc_file_path + 
                     ' -clusters ' + clustering_file_path + ' -out ' + input_parameters['tmp'] + 
-                    ' -name ' + input_parameters['name'])
+                    ' -name ' + input_parameters['name'] + ' -dep ' + input_parameters['dependencies'])
         
         
         refined_file_path = input_parameters['tmp'] + input_parameters['name'] + '_refined_clusters.txt'
@@ -217,10 +218,9 @@ def launch_pipeline(input_parameters, qc_file_path, job_name):
         if not os.path.exists(consensus_file_path):
             sys.stderr.write('Main:' + input_parameters['name'] + ' the consensus script did not produce expected txt file in the tmp directory.\n')
             sys.exit()
-    """
-    
-    """
+
     return()
+
 
 def final_clustering(input_parameters, qc_fasta_path, job_name):
     """

@@ -57,6 +57,8 @@ parser.add_argument("-fasta", "--fasta_file", help="path to FASTQ file")
 parser.add_argument("-clusters", "--cluster_file", help="path to clusters file")
 parser.add_argument("-out", "--output_directory", help="path to the output directory")
 parser.add_argument("-name", "--job_name", help="the name of the job / what the outfiles will use as part of their name")
+parser.add_argument("-dep", "--dependencies_path", 
+                    help="path to the dependenceis folder (folder with blast, minimap, etc.)")
 
 args = parser.parse_args()
 
@@ -100,8 +102,8 @@ for c in range(0, max(clusters)):
     # to refine our clustering even more.
     guide_tree_file = args.output_directory + '/' + args.job_name + '_tmp_guide_tree.xml'
     clustal_out_file = args.output_directory + '/' + args.job_name + '_tmp_clustal_alignments.txt'
-    os.system('/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/dependencies/./clustalo -i ' 
-              + indiv_cluster_file + '  --guidetree-out=' + guide_tree_file + ' --out ' + clustal_out_file + ' --force')
+    os.system(args.dependencies_path + '/clustalo -i '+ indiv_cluster_file + '  --guidetree-out=' + guide_tree_file 
+                + ' --out ' + clustal_out_file + ' --force')
 
 
     # Check if the tree is worth refining. If the standard deviation of the leaf - root distances are 
