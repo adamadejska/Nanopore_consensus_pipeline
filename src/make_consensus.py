@@ -66,7 +66,7 @@ def make_consensus_seq(bacteria_list, full_sequences, out_name, tmp_path, dep_pa
 
     consensus_file = tmp_path + '/cluster_consensus_tax_' + out_name + '.fasta'
     # Use em_cons for creating a consensus sequence from the multiple alignment. 
-    os.system('cons ' + msa_file + ' ' + consensus_file + ' 2> /dev/null')
+    os.system('em_cons ' + msa_file + ' ' + consensus_file + ' 2> /dev/null')
 
     # Create a consensus without the 'N's
     no_n_consensus = ''
