@@ -58,6 +58,7 @@ with open(out_file, 'w') as out:
     out.write('cluster#, ID, full_name, score, e_value, identity_%, gaps_%\n')
     with open(blast_file, 'r') as f:
         new_query = False
+        unknown = False
         for line in f:
             if line.startswith('Query=') and not new_query:
                 cluster = line.split('=')[1].strip()
@@ -66,11 +67,15 @@ with open(out_file, 'w') as out:
                 line = line.split(',')[0]
                 id = line.split(' ')[0][1:]
                 full_name = ' '.join(line.split(' ')[1:]).strip()
+                if 'Uncultured' in full_name or 'Unidentified' in full_name:
+                    unknown = True
+                else:
+                    unknown = False
 
             if line.startswith(' Score') and new_query:
                 score = line.split(',')[0].split('(')[-1][:-1]
                 e_value = line.split(',')[1].split('=')[1].strip()
-            if line.startswith(' Identities') and new_query:
+            if line.startswith(' Identities') and new_query and not unknown:
                 identity = line.split(',')[0].split('(')[-1][:-2]
                 gaps = line.split(',')[1].split('(')[-1][:-3]
 
