@@ -21,7 +21,7 @@ with open(out_file, 'w') as out:
     for record in SeqIO.parse(args.fastq_file, "fastq"):
         name = str(record.id)
         seq = str(record.seq)
-        if len(seq) > 1400 and len(seq) < 1700:
+        if len(seq) > 1300: # and len(seq) < 1700:
             out.write('>' + name + '\n')
             out.write(seq + '\n')
 
