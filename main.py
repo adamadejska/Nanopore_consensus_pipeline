@@ -151,7 +151,7 @@ def launch_pipeline(input_parameters, qc_file_path, job_name):
 
     ## Run kmer freq matrix script.
     fasta_file = qc_file_path.split('/')[-1]
-    sys.stdout.write('Main:' + input_parameters['name'] + ' Launch kmer frequency matrix construction.\n')
+    sys.stdout.write('Main: ' + input_parameters['name'] + ' Launch kmer frequency matrix construction.\n')
     os.system('julia ' + current_dir + '/src/main.jl ' + input_parameters['fastq_folder'] + ' ' + 
                      fasta_file + ' ' + input_parameters['tmp'] + ' ' + 
                      str(input_parameters['parameters']['kmer_len']))
@@ -159,11 +159,11 @@ def launch_pipeline(input_parameters, qc_file_path, job_name):
     kmer_file_path = input_parameters['tmp'] + input_parameters['name'] + '_kmer_matrix.csv'
     # Check if the kmer freq script outputted a correct file to correct directory.
     if not os.path.exists(kmer_file_path):
-        sys.stderr.write('Main:' + input_parameters['name'] + ' the kmer freq matrix script did not produce expected csv file in the tmp directory.\n')
+        sys.stderr.write('Main: ' + input_parameters['name'] + ' the kmer freq matrix script did not produce expected csv file in the tmp directory.\n')
         sys.exit()
 
     ## Run UMAP clustering script.
-    sys.stdout.write('Main:' + input_parameters['name'] + ' Launch UMAP clustering script.\n')
+    sys.stdout.write('Main: ' + input_parameters['name'] + ' Launch UMAP clustering script.\n')
     os.system('python3 ' + current_dir + '/src/umap_clustering.py -kmer ' + kmer_file_path + 
                 ' -out ' + input_parameters['tmp'] + ' -nc ' + str(input_parameters['parameters']['umap_n_components']) +
                 ' -nn ' + str(input_parameters['parameters']['umap_n_neighbors']) + ' -min_cs ' +
@@ -175,13 +175,13 @@ def launch_pipeline(input_parameters, qc_file_path, job_name):
     clustering_file_path = input_parameters['tmp'] + input_parameters['name'] + '_clustering.csv'
     # Check if the UMAP clustering outputted a correct file to correct directory.
     if not os.path.exists(clustering_file_path):
-        sys.stderr.write('Main:' + input_parameters['name'] + ' the UMAP clustering script did not produce expected csv file in the tmp directory.\n')
+        sys.stderr.write('Main: ' + input_parameters['name'] + ' the UMAP clustering script did not produce expected csv file in the tmp directory.\n')
         sys.exit()
     
     if input_parameters['refinement']:
         
         ## Run refine clusters script.
-        sys.stdout.write('Main:' + input_parameters['name'] + ' Launch refine clusters script.\n')
+        sys.stdout.write('Main: ' + input_parameters['name'] + ' Launch refine clusters script.\n')
         os.system('python3 ' + current_dir + '/src/refine_clusters.py -fasta ' + qc_file_path + 
                     ' -clusters ' + clustering_file_path + ' -out ' + input_parameters['tmp'] + 
                     ' -name ' + input_parameters['name'] + ' -dep ' + input_parameters['dependencies'])
@@ -190,11 +190,11 @@ def launch_pipeline(input_parameters, qc_file_path, job_name):
         refined_file_path = input_parameters['tmp'] + input_parameters['name'] + '_refined_clusters.txt'
         # Check if the UMAP clustering outputted a correct file to correct directory.
         if not os.path.exists(refined_file_path):
-            sys.stderr.write('Main:' + input_parameters['name'] + ' the refinement script did not produce expected txt file in the tmp directory.\n')
+            sys.stderr.write('Main: ' + input_parameters['name'] + ' the refinement script did not produce expected txt file in the tmp directory.\n')
             sys.exit()
         
         ## Run consensus script.
-        sys.stdout.write('Main:' + input_parameters['name'] + ' Launch define consensus script.\n')
+        sys.stdout.write('Main: ' + input_parameters['name'] + ' Launch define consensus script.\n')
         os.system('python3 ' + current_dir + '/src/make_consensus.py -fasta ' + qc_file_path + 
                     ' -clusters ' + refined_file_path + ' -tmp_out ' + input_parameters['tmp'] + 
                     ' -out ' + input_parameters['tmp'] + ' -dep ' + input_parameters['dependencies'] + 
@@ -203,11 +203,11 @@ def launch_pipeline(input_parameters, qc_file_path, job_name):
         consensus_file_path = input_parameters['tmp'] + input_parameters['name'] + '_consensus.txt'
         # Check if the consensus outputted a correct file to correct directory.
         if not os.path.exists(consensus_file_path):
-            sys.stderr.write('Main:' + input_parameters['name'] + ' the consensus script did not produce expected txt file in the tmp directory.\n')
+            sys.stderr.write('Main: ' + input_parameters['name'] + ' the consensus script did not produce expected txt file in the tmp directory.\n')
             sys.exit()
     else:
         ## Run consensus script.
-        sys.stdout.write('Main:' + input_parameters['name'] + ' Launch define consensus script.\n')
+        sys.stdout.write('Main: ' + input_parameters['name'] + ' Launch define consensus script.\n')
         os.system('python3 ' + current_dir + '/src/make_consensus.py -fasta ' + qc_file_path + 
                     ' -clusters ' + clustering_file_path + ' -tmp_out ' + input_parameters['tmp'] + 
                     ' -out ' + input_parameters['tmp'] + ' -dep ' + input_parameters['dependencies'] +
@@ -216,7 +216,7 @@ def launch_pipeline(input_parameters, qc_file_path, job_name):
         consensus_file_path = input_parameters['tmp'] + input_parameters['name'] + '_consensus.txt'
         # Check if the consensus outputted a correct file to correct directory.
         if not os.path.exists(consensus_file_path):
-            sys.stderr.write('Main:' + input_parameters['name'] + ' the consensus script did not produce expected txt file in the tmp directory.\n')
+            sys.stderr.write('Main: ' + input_parameters['name'] + ' the consensus script did not produce expected txt file in the tmp directory.\n')
             sys.exit()
 
     return()
