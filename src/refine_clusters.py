@@ -31,7 +31,7 @@ def recursive_subclustering(root, t, parent):
     val0, len0 = recursive_subclustering(c1, t, root)
     val1, len1 = recursive_subclustering(c2, t, root)
 
-    if np.std(np.array([len0, len1])) > 0.0001:
+    if np.std(np.array([len0, len1])) > 0.001:
         ret0, ret1 = [c1], [c2]
     else:
         ret0, ret1 = [], []
@@ -57,6 +57,11 @@ parser.add_argument("-fasta", "--fasta_file", help="path to FASTQ file")
 parser.add_argument("-clusters", "--cluster_file", help="path to clusters file")
 parser.add_argument("-out", "--output_directory", help="path to the output directory")
 parser.add_argument("-name", "--job_name", help="the name of the job / what the outfiles will use as part of their name")
+parser.add_argument("-std_ref", "--std_refinement", default=0.0015,
+                    help="value of standard deviation of branch lengths that will determine if we do or do not split the cluster")
+parser.add_argument("-std_t", "--std_tree", default=0.001,
+                    help="value of standard deviation of branch lengths that will determine how we split the clusters")
+#parser.add_argument("-threads", "--threads_n", help="number of threads available for clustal omega")
 parser.add_argument("-dep", "--dependencies_path", 
                     help="path to the dependenceis folder (folder with blast, minimap, etc.)")
 
@@ -102,16 +107,16 @@ for c in range(0, max(clusters)):
     # to refine our clustering even more.
     guide_tree_file = args.output_directory + '/' + args.job_name + '_tmp_guide_tree.xml'
     clustal_out_file = args.output_directory + '/' + args.job_name + '_tmp_clustal_alignments.txt'
-    os.system(args.dependencies_path + '/clustalo -i '+ indiv_cluster_file + '  --guidetree-out=' + guide_tree_file 
-                + ' --out ' + clustal_out_file + ' --force')
+    os.system(args.dependencies_path + '/clustalo_git/clustalo/src/./clustalo -i '+ indiv_cluster_file + '  --guidetree-out=' + guide_tree_file 
+                + ' --out ' + clustal_out_file + ' --dealign --force ')
 
-
+    # ' --threads ' + args.threads_n +
     # Check if the tree is worth refining. If the standard deviation of the leaf - root distances are 
     # long enough, we should probably split the tree.
     t = PhyloTree(guide_tree_file)
     std = np.std(np.array([t.get_distance(i) for i in t.get_leaf_names()]))
 
-    if std > 0.0001:
+    if std > 0.0015:
         print('\t Refinement: cluster ' + str(c) + ' passed the refinement checkpoint. Proceeding with splitting.')
         
         leafs = list(t.get_leaf_names())
