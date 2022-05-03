@@ -10,10 +10,12 @@
 ####################################################################################################
 
 # Full path to the files need to be provided. One fastq file at a time can be analyzed. 
-fastq: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/mock_datasets/mock6_1000_varying.fastq
+fastq: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/mock_datasets/mock5_1000_varying.fastq
 tmp: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/tmp
 dependencies: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/dependencies
 results: /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/result_files
+blast_db: /media/data/home/blast/ref_prok_rep_genomes_db
+db_name: ref_prok_rep_genomes
 
 # Set to True if you want to include a refinement of the clusters based on the MSA guide tree.
 refinement: True
@@ -31,7 +33,7 @@ parameters:
 
 
 #####
-# python3 /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/main.py --config_file /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/input_parameters.yml
+# time python3 /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/main.py --config_file /home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/input_parameters.yml
 
 # Cluster
 # python3 /home/amadejska/16s_project/Nanopore_consensus_pipeline/src/main.py --config_file /home/amadejska/16s_project/Nanopore_consensus_pipeline/input_parameters.yml
