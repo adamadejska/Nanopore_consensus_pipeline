@@ -16,22 +16,14 @@ import numpy as np
 import os
 
 
-
-
-output_dir = '/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/tmp/mock6_1000_varying_tmp'
-job_name = 'mock6_1000_varyingaa'
-fasta_file = '/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/tmp/mock6_1000_varying_tmp/fastq_files/mock6_1000_varyingaa'
+output_dir = '/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/tmp/mock5_1000_varying_tmp'
+job_name = 'mock5_1000_varyingaa'
+fasta_file = '/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/tmp/mock5_1000_varying_tmp/fastq_files/mock5_1000_varyingaa'
 out_file = output_dir + '/'+ job_name + '_refined_clusters.txt'
+dependencies_dir = '/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/dependencies'
+current_dir = os.getcwd()
 
 final_out = open(out_file, 'w')
-
-# Make a folder for storing reads of each cluster as separate fasta files
-cluster_fasta_dir = output_dir + '/cluster_fasta/'
-
-if not os.path.isdir(cluster_fasta_dir):
-    os.mkdir(cluster_fasta_dir)
-
-os.system('rm  ' + cluster_fasta_dir + '/*')
 
 # Read in the fastq file and save which read has what sequence
 name_to_seq = {}
@@ -40,7 +32,7 @@ for record in SeqIO.parse(fasta_file, "fasta"):
     seq = str(record.seq)
     name_to_seq[name] = seq
 
-cluster_file = '/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/tmp/mock6_1000_varying_tmp/mock6_1000_varyingaa_clustering.csv'
+cluster_file = '/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/tmp/mock5_1000_varying_tmp/mock5_1000_varyingaa_clustering.csv'
 # For each cluster, make a separate fasta file for each read.
 
 clusters = []
@@ -51,54 +43,70 @@ with open(cluster_file, 'r') as f:
         clusters.append(int(c))
 
 
-for c in range(4, 5):
+
+for c in range(0, max(clusters)+1):
     print('\t Refinement: processing cluster ' + str(c))
 
     read_counter = 0
     guide_tree_file = output_dir + '/' + job_name + '_guide_tree_cluster_' + str(c) + '.dnd'
     read_names = []
+    indiv_cluster_file = output_dir + '/' + job_name + '_tmp_ind_cluster_' + str(c) + '.fasta'
 
-    with open(cluster_file, 'r') as f:
-        for line in f:
-            line = line.split(',')
-            read_name = line[0].split('/')[-1].strip()
-            cluster = int(line[1])
-            if cluster == c:
-                read_names.append(read_name)
-                tmp_fasta_file = cluster_fasta_dir + '/' + read_name + '.fasta'
-                with open(tmp_fasta_file, 'w') as out:
+    with open(indiv_cluster_file, 'w') as out:
+        with open(cluster_file, 'r') as f:
+            for line in f:
+                line = line.split(',')
+                read_name = line[0].split('/')[-1].strip()
+                cluster = int(line[1])
+                if cluster == c:
                     out.write('>' + read_name + '\n')
                     out.write(name_to_seq[read_name] + '\n')
                     read_counter += 1
-
+   
     print('\t Refinement: creating a tree for ' + str(read_counter) + ' reads.')
-    os.system('mashtree '+ cluster_fasta_dir + '/*   > ' + guide_tree_file)
 
-    guide_tree_file = '/home/ada/Desktop/16S_alignments/scripts/16S_alignment/reads_clustering_pipeline/main_pipeline/src/tmp/mock6_1000_varying_tmp/cluster_fasta/guide_tree_test.txt'
+    os.system(dependencies_dir + '/mbed/./mBed -infile ' + indiv_cluster_file + ' -method SparseMap -useSeedsOnly true ')
 
-    t = PhyloTree(guide_tree_file)
-    std = np.std(np.array([t.get_distance(i) for i in t.get_leaf_names()]))
-    print(std)
+    #t = PhyloTree(guide_tree_file)
+    #std = np.std(np.array([t.get_distance(i) for i in t.get_leaf_names()]))
+    #print(std)
+        
+    dist_file = current_dir + '/distMat.out'
 
+    reads_counter = 0 
+    with open(dist_file, 'r') as f:
+        for line in f:
+            reads_counter += 1
 
-    if std > 0.01:
+    print('-------')
+    print(reads_counter)
+    data = np.zeros((reads_counter, reads_counter))
+    read_names = []
+    row_n = 0
+    with open(dist_file, 'r') as f:
+        for line in f:
+            read_names.append(line.split()[0])
+            row = line.split()[1:]
+            col_n = 0
+            for col in row:
+                if row_n == col_n:
+                    data[row_n][col_n] = 0
+                else:
+                    data[row_n][col_n] = col
+                    data[col_n][row_n] = col
+                col_n += 1
+            row_n += 1
+
+    std = np.std(data)
+    final_out.write(str(std))
+    
+    if std > 0.02:
         print('\t Refinement: cluster ' + str(c) + ' passed the refinement checkpoint. Proceeding with splitting.')
         
-        leafs = list(t.get_leaf_names())
-        data = np.zeros((len(leafs), len(leafs)))
-        for row in range(0, len(leafs)):
-            for col in range(0,len(leafs)):
-                if row == col:
-                    data[row][col] = 0
-                else:
-                    data[row][col] = t.get_distance(leafs[row], leafs[col])
-                    data[col][row] = t.get_distance(leafs[row], leafs[col])
 
-        std = np.std(data)
-        print(std)
-        print(len(read_names))
         # k means clustering, determine the number of clusters (k) by the number of reads we work with
-        k = int(read_counter / 250)  # roughly, each cluster should have 250 reads. More than enough for consensus.
+        k = int(reads_counter / 150)  # roughly, each cluster should have 250 reads. More than enough for consensus.
+        print(k)
         clusterid, error, nfound = kcluster(data, nclusters=k)
         clusterid = np.array(list(clusterid))
 
@@ -115,6 +123,7 @@ for c in range(4, 5):
                 read = read.split('.')[0]
                 cluster_num = str(c) + '_' + str(k)
                 final_out.write(read + ',' + cluster_num + '\n')
+        
 
     else:
         # If the std of branch length is not enough, just copy all the reads of the cluster. We won't
@@ -122,5 +131,3 @@ for c in range(4, 5):
         for read in read_names:
             final_out.write(read + ',' + str(c) + '\n')
    
-   
-    os.system('rm  ' + cluster_fasta_dir + '/*')
