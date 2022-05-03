@@ -296,12 +296,12 @@ def final_clustering(input_parameters, qc_fasta_path, job_name):
 
     ## Run BLASTN on the consensus sequences.
     sys.stdout.write('\nMain: Launch BLASTN script. \n')
-    os.system('python3 ' + current_dir + '/src/run_blastn.py -consensus ' + final_consensus_file_path +
-             ' -out ' + input_parameters['tmp'] + ' -dep ' + input_parameters['dependencies'] + 
-             ' -name ' + job_name)
+    os.system('python3 ' + current_dir + '/src/run_blastn_in_docker.py -consensus ' + final_consensus_file_path +
+             ' -out ' + input_parameters['results'] + ' -dbpath ' + input_parameters['blast_db'] +
+             ' -db_name ' + input_parameters['db_name'])
 
     # Check if the BLASTN outputted a correct file to correct directory.
-    blastn_result_file_path = input_parameters['tmp'] + job_name + '_blastn_result.fa'
+    blastn_result_file_path = input_parameters['results'] + job_name + '_final_consensus.fasta_' +input_parameters['db_name'] + '.out'
     if not os.path.exists(blastn_result_file_path):
         sys.stderr.write(blastn_result_file_path)
         sys.stderr.write('Main: the BLASTN script did not produce expected txt file in the tmp directory.\n')
