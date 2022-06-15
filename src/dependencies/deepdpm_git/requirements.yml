@@ -1,0 +1,24 @@
+name: deepdpm-env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pip
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - scipy
+  - seaborn
+  - tqdm
+  - joblib
+  - psutil
+  - neptune-client
+  - umap-learn
+  - pip:
+    - torch
+    - torchvision
+    - torchaudio
+    - pytorch-lightning==1.2.10
+    - kmeans-pytorch
